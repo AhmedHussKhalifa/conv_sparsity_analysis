@@ -1,0 +1,52 @@
+Limited tf.compat.v2.summary API due to missing TensorBoard installation
+New session group has been created
+(94,)
+=-=-=-=Conv_Layer=-=-=-= 
+input_tensor_name: conv_1:0, output_tensor_name: conv_2/Conv2D:0 
+In: 1, Ic: 32, Ih: 147, Iw: 147               
+Kh: 3, Kw: 3, K: 64, padding: SAME               
+Sh: 1, Sw: 1               
+Oh: 147, Ow: 147
+Iw : 147, Ih : 147
+Padding -->  SAME
+tensorflow -->  1 1 1 1
+Feature Map shape rows: 149 , cols: 149, channels: 32 
+Lowering Matrix shape rows: 147 , cols: 0
+Counts : Feature Map --> [0, 0 , 32] <-- Lowering 
+lowering matrix shape: (147, 14304)
+Lowering nnz = 1218800 ,feature map nnz = 408146
+Density : Feature Map--> [ 0.574504 <-> 0.579639 ] <--Lowering Matrix 
+Ow = 147 ,Iw = 149 ,Ih = 149 ,Kw = 3 ,sw = 1 ,density_feature = 0.574504 , density_lowering = 0.579639
+
+------ Im2col vs CPO-------
+
+S_Im2col (S4) : 194481.000000
+Im2col vs CPO S4-S1 : 168379.875000 
+Compression Ratio (CPO vs Im2col): 316.13x
+------ MEC vs CPO -------
+
+MEC (S2) = 65709.000000  && CPO (S1) = 26101.125000
+MEC vs CPO S2-S1 : 39607.875000 || with Feature_maps density = 0.574504 || Density bound MEC vs. CPO = 1.466533
+Compression Ratio (MEC vs Im2col): 2.96x
+
+------ CSCC vs CPO-------
+
+S_cscc (S3) : 76323.000000
+CSCC vs CPO S3-S1 : 75583.000000 || with Lowering density = 0.579639 || Density bound CSCC vs. CPO = 1.705576
+Compression Ratio (CSCC vs Im2col): 2.55x
+
+------ END of Analysis-------
+
+The bound (MEC)-(CPO) : 1.466533 && The bound (CSCC)-(CPO) : 1.705576
+
+-------------
+
+Patterns Calculations
+Counts of Set #1 --> 0.000000 
+Counts of Set #2 --> 1.381368 
+Counts of Set #3 --> 98.618632 
+Total Number of Non-Zero after creating the patterns: 1218800
+Total Number of Non-Zero of the lowering matrix: 1218800
+
+-------------
+
