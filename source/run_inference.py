@@ -232,6 +232,8 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
             break
 
     return 0
+
+
 def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity_channel, lowering_desity_channel):
     # Iw = 1
     # Ih = 1
@@ -248,21 +250,24 @@ def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity
     print('\n------ Im2col vs CPO-------\n')
 
     S1 = Ow*Kw/sw + Kw/sw + Ow + 1 + 2*ru*Ih*Iw
+    S2 = Ow*Kw*Ih
 
     if (Kw%sw) == 0:
-        S1_cmp = (Kw/sw)*(Ow+1)+2*Iw*ru
+        S1_cmp = (Kw/sw)*(Ow+1)+2*Ih*Iw*ru # we should multiply by Ic here, create seperate functions for this
     elif (Kw%sw) != 0:
-        S1_cmp = math.ceil(Kw/sw)*(Ow+1)+2*Iw*ru
+        S1_cmp = math.ceil(Kw/sw)*(Ow+1)+2*Ih*Iw*ru
+        
     S_im2col = (math.ceil((Iw-Kw)/sw)+1)*(math.ceil((Ih-Kh)/sh)+1)*Kw*Kh
     print(('S_Im2col (S4) : %f')% (S_im2col))
     print(('Im2col vs CPO S4-S1 : %f ')% (S_im2col-S1))
-    print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
+    #print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
+    print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1))
 
     print('------ MEC vs CPO -------\n')
     #MEC - CPO
-    S2 = Ow*Kw*Ih
     S_mec_cop = S2-S1
     print(("MEC (S2) = %f  && CPO (S1) = %f")%(S2,S1))
+    
     # print('Value of ru = %f , S1 = %f , S2 = %f, S2-S1= %f'%(ru, S1, S2, S_mec_cop))
     density_bound_mec = (Ow*Kw*Ih - (Ow*Kw)/sw - Kw/sw - Ow - 1)
     density_bound_mec = density_bound_mec / (2*Ih*Iw)

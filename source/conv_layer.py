@@ -36,3 +36,5 @@ class Conv_Layer(object):
               self.In, self.Ic, self.Ih, self.Iw, \
               self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow))
       return s
+
+  # Here we should add the intermediate matrix reps, etc

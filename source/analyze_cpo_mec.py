@@ -3,14 +3,17 @@ from __future__ import division
 import math
 
 # this I is after padding
-Ih  = 147
-Iw  = 147
+Ih  = 149
+Iw  = 149
 Kw  = 3
 sw  = 1
 ru = 0.574504
 
 # This Ih, Iw after padding... there is a padding equation needs to be done
 Ow  = 1 + (Iw - Kw)/sw
+
+# padd
+Ow = 147
 
 print('Ih, Iw, Kw, sw, Ow: ', Ih, Iw, Kw, sw, Ow)
 print('-------------\n')
