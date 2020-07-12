@@ -25,6 +25,7 @@ import argparse
 from model_names import Models
 from code_modes  import CodeMode
 from conv_layer import Conv_Layer
+from calc_space_methods import *
 
 # import imagenet_preprocessing as ipp
 from preprocessing import inception_preprocessing, vgg_preprocessing
@@ -260,8 +261,8 @@ def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity
     S_im2col = (math.ceil((Iw-Kw)/sw)+1)*(math.ceil((Ih-Kh)/sh)+1)*Kw*Kh
     print(('S_Im2col (S4) : %f')% (S_im2col))
     print(('Im2col vs CPO S4-S1 : %f ')% (S_im2col-S1))
-    #print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
-    print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1))
+    print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
+    #print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1))
 
     print('------ MEC vs CPO -------\n')
     #MEC - CPO
