@@ -15,18 +15,18 @@ class Conv_Layer(object):
     
     self.input_tensor_name  =  input_tensor_name
     self.output_tensor_name =  output_tensor_name
-    self.Kw                 =  Kw
-    self.Kh                 =  Kh
-    self.K                  =  K
-    self.Sw                 =  Sw
-    self.Sh                 =  Sh
-    self.Ow                 =  Ow
-    self.Oh                 =  Oh
-    self.Ih                 = Ih
-    self.Iw                 = Iw
-    self.Ic                 = Ic
-    self.In                 = In
-    self.padding            = padding
+    self.Kw                 =  int(Kw)
+    self.Kh                 =  int(Kh)
+    self.K                  =  int(K)
+    self.Sw                 =  int(Sw)
+    self.Sh                 =  int(Sh)
+    self.Ow                 =  int(Ow)
+    self.Oh                 =  int(Oh)
+    self.Ih                 =  int(Ih)
+    self.Iw                 =  int(Iw)
+    self.Ic                 =  int(Ic)
+    self.In                 =  int(In)
+    self.padding            =  padding
 
   def __str__(self):
       s = ('=-=-=-=Conv_Layer=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \

@@ -365,31 +365,21 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     print('\n-------------\n')
     return pattern_set_perc
 
-def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
-    # It shpould be given by the model 
-    Ow = int(Ow)
-    Oh = int(Oh)
-    filter_width = int(kw)
-    filter_height = int(kh)
-    Iw = feature_maps.shape[0]
-    Ih = feature_maps.shape[1]
-    in_width = int(Iw)
-    in_height = int(Ih)
-    print("Iw : %d, Ih : %d"%(Iw,Ih))
-    strides = np.array([0,sh,sw])
+def feature_analysis(feature_maps, layer):
+    # feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
     
     #Padding Feature Map
     if (padding =='SAME'):
         print("Padding --> ","SAME")
 
 
-        out_height = math.ceil(float(in_height) / float(strides[1]))
-        out_width  = math.ceil(float(in_width) / float(strides[2]))
+        cal_Ow = math.ceil(float(layer.Ih) / float(layer.Sh))
+        cal_Oh  = math.ceil(float(layer.Iw) / float(layer.Sw))
 
-        pad_along_height = max((out_height - 1) * strides[1] +
-                            filter_height - in_height, 0)
-        pad_along_width = max((out_width - 1) * strides[2] +
-                           filter_width - in_width, 0)
+        pad_along_height = max((layer.Oh - 1) * layer.Sh +
+                            layer.Kh - layer.Ih, 0)
+        pad_along_width = max((layer.Ow - 1) * layer.Sw +
+                           layer.Kw - layer.Iw, 0)
         pad_top = pad_along_height // 2
         pad_bottom = pad_along_height - pad_top
         pad_left = pad_along_width // 2
@@ -400,8 +390,8 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
 
     elif (padding =='VALID'):
         print("Padding --> ","VALID")
-        out_height  = math.ceil(float(in_height - filter_height + 1) / float(strides[1]))
-        out_width   = math.ceil(float(in_width - filter_width + 1) / float(strides[2]))
+        cal_Oh  = math.ceil(float(layer.Ih - layer.Kh + 1) / float(layer.Sh))
+        cal_Ow   = math.ceil(float(layer.Iw - layer.Kw + 1) / float(layer.Sw))
         pad_top = 0
         pad_bottom = 0
         pad_left = 0
@@ -410,7 +400,7 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
         print("ERROR in padding at inputs")
         exit(0)
 
-    if ((Ow != out_width) or (Oh != out_height)):
+    if ((Ow != cal_Ow) or (Oh != cal_Oh)):
         print("ERROR in padding in dimensions")
         exit(0)
 
