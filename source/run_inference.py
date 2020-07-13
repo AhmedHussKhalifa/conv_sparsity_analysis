@@ -245,7 +245,7 @@ def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity
 
     S1 = Ow*Kw/sw + Kw/sw + Ow + 1 + 2*ru*Ih*Iw
     S2 = Ow*Kw*Ih
-
+    
     if (Kw%sw) == 0:
         S1_cmp = (Kw/sw)*(Ow+1)+2*Ih*Iw*ru # we should multiply by Ic here, create seperate functions for this
     elif (Kw%sw) != 0:
@@ -523,7 +523,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
 
     # for layer in all_layers:
     print(np.shape(all_layers))
-    layer = all_layers[2]
+    layer = all_layers[92]
     print(layer)
     current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
