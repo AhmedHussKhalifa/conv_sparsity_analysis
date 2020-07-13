@@ -51,38 +51,8 @@ def get_DNN_info(sess):
 
     all_tensors = [tensor for op in tf.get_default_graph().get_operations() for tensor in op.values()]
     all_layers  = []
-    for itensor, tensor in enumerate(all_tensors):
-        #print(tensor)
-        if 'conv2d_params' in tensor.name:
-            filter_shape = tensor.shape
-            Kh           = filter_shape[0]
-            Kw           = filter_shape[1]
-            K            = filter_shape[3]
-            
-            input_tensor = all_tensors[itensor-1]
-            input_tensor_name = input_tensor.name
-            Ih = input_tensor.shape[1]
-            Iw = input_tensor.shape[2]
-            Ic = input_tensor.shape[3]
-
-        if 'Conv2D' in tensor.name:
-            output_shape = tensor.shape
-            Oh           = output_shape[1]
-            Ow           = output_shape[2]
-            output_tensor_name = tensor.name
-            
-            Sh = -1
-            Sw = -1
-            
-            conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic)
-            all_layers.append(conv_layer)
-
-            #print(conv_layer, ' Layer Count: ', len(all_layers), conv_layer.output_tensor_name)
     
-    #print('\n\n\nDNN Law Yoom ye3ady')
-
-    layer_count = 0
-
+    # loop on all nodes in the graph
     for  nid, n in enumerate(graph_def.node):
         try:
             
@@ -93,53 +63,33 @@ def get_DNN_info(sess):
 
                 input_tensor_name = n.input[0] + ':0'
                 input_tensor      = sess.graph.get_tensor_by_name(input_tensor_name)
-                Ih = input_tensor.shape[1]
-                Iw = input_tensor.shape[2]
-                Ic = input_tensor.shape[3]
+                Ih                = input_tensor.shape[1]
+                Iw                = input_tensor.shape[2]
+                Ic                = input_tensor.shape[3]
 
                 conv_tensor_params_name = n.input[1] + ':0'
                 conv_tensor_params      = sess.graph.get_tensor_by_name(conv_tensor_params_name)
-                filter_shape = conv_tensor_params.shape
-                Kh           = filter_shape[0]
-                Kw           = filter_shape[1]
-                K            = filter_shape[3]
-                print(input_tensor, 'Hello')
-                print(conv_tensor_params)
-                print(all_layers[0])
+                filter_shape            = conv_tensor_params.shape
+                Kh                      = filter_shape[0]
+                Kw                      = filter_shape[1]
+                K                       = filter_shape[3]
                
-
-                print('print x')
-                x = n.attr['__output_shapes'].list
-                print(x)
                 Oh = n.attr['_output_shapes'].list.shape[0].dim[1].size
                 Ow = n.attr['_output_shapes'].list.shape[0].dim[2].size
 
-                print('outs: ', Oh, Ow)
-                print('----')
-                exit(0)
-                #print(n)
                 if 'padding' in n.attr.keys():
                     padding_type = n.attr['padding'].s.decode(encoding='utf-8')
-                    all_layers[layer_count].padding = padding_type
                 if 'strides' in n.attr.keys():
                     art_tensor_name = n.name + ':0'
                     strides_list = [int(a) for a in n.attr['strides'].list.i]
                     Sh           = strides_list[1]
                     Sw           = strides_list[2]
-                    
-                    # Update the stride information
-                    #print('Layer Count: ', layer_count, n.name)
-                    all_layers[layer_count].Sh = Sh
-                    all_layers[layer_count].Sw = Sw
-                    layer_count = layer_count + 1
-                    #print (n.name, ' Strides: ' , [int(a) for a in n.attr['strides'].list.i])
                 
-                # New
-                conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic)
+                # Create the conv layer
+                conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In=1, padding=padding_type)
                 all_layers.append(conv_layer)
         except ValueError:
             print('%s is an Op.' % n.name)
-   
     return all_layers
 
 # ---- 
