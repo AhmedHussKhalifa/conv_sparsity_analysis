@@ -12,9 +12,24 @@ from conv_layer import Conv_Layer
 def getSpaceCPO(layer, is_for_density_calc=True):
 
     if is_for_density_calc:
-        space = layer.Ow*layer.Kw/layer.sw + layer.Kw/layer.sw + layer.Ow + 1 + 2*layer.ru*layer.Ih*layer.Iw
+        # use the assumption of Ic = 1 && In = 1
+        space = (layer.Ow*layer.Kw)/layer.sw + (layer.Kw/layer.sw) + layer.Ow + 1 + 2*(layer.ru*layer.Ih*layer.Iw)
     else:
+        # we should multiply by Ic here, create seperate functions for this
+        if (layer.Kw%layer.Sw) == 0:
+            space = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic) 
+        elif (layer.Kw%layer.Sw) != 0:
+            space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic)
+    return space
+
+def getSpaceCPS(layer, is_for_density_calc=True):
+
+    if is_for_density_calc:
+        # use the assumption of Ic = 1 && In = 1
         space = 1
+    else:
+        # we should multiply by Ic here, create seperate functions for this
+        space = 0
     return space
 
 # Calculates the required memory units for the **MEC**  method
@@ -38,8 +53,12 @@ def getSpaceCSCC(layer, is_for_density_calc=True):
     return space
 
 # Calculates the required memory units for the **Im2Col** method
-def getSpaceIm2Col(layer):
-    space = 0
+def getSpaceIm2Col(layer, is_for_density_calc=True):
+    if is_for_density_calc:
+        space = 0
+    else:
+        space = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru
     return space
+
 
 

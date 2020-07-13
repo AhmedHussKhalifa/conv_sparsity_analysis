@@ -39,7 +39,6 @@ class Conv_Layer(object):
   def padding_cal(self):
       #Padding Feature Map
       if (self.padding =='SAME'):
-          # print("Padding --> ","SAME")
           cal_Ow = math.ceil(float(self.Ih) / float(self.Sh))
           cal_Oh  = math.ceil(float(self.Iw) / float(self.Sw))
 
@@ -54,7 +53,6 @@ class Conv_Layer(object):
 
           # print("tensorflow --> ",pad_top , pad_bottom, pad_left, pad_right)
       elif (self.padding =='VALID'):
-          # print("Padding --> ","VALID")
           cal_Oh  = math.ceil(float(self.Ih - self.Kh + 1) / abs(float(self.Sh)))
           cal_Ow   = math.ceil(float(self.Iw - self.Kw + 1) / abs(float(self.Sw)))
           pad_top = 0
@@ -123,11 +121,11 @@ class Conv_Layer(object):
         if (self.feature_desity_channel[idx] < self.lowering_desity_channel[idx] ):
             # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
             self.lower_desity_count = self.lower_desity_count + 1
-        elif (self.feature_desity_channel[idx] < self.lowering_desity_channel[idx] ):
+        elif (self.feature_desity_channel[idx] > self.lowering_desity_channel[idx] ):
             # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
             self.feature_desity_count = self.feature_desity_count + 1
         else:
-            self.both_feature_lowering = self.feature_desity_count + 1
+            self.both_feature_lowering = self.both_feature_lowering + 1
             # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
 
     return lowering_matrix
@@ -146,11 +144,20 @@ class Conv_Layer(object):
     self.density_lowering = self.tot_nz_lowering/resol_lowering
 
   def print_all(self):
-    print("\n ############ Print Layer object ############\n")
-    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(self.Iw_padded, self.Ih_padded, self.Ic))
-    print("lowering matrix shape:", self.lowering_shape)
-    print("Lowering nnz = %d ,feature map nnz = %d"%(self.tot_nz_lowering, self.tot_nz_feature))
-    print(("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")%(self.ru, self.density_lowering))
-    print("Density Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix"%(self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count))
-    print("\n ############ END ***\/** object ############\n")
+    print("\n############ Print Layer object ############\n")
+    print(self)
+    print('\n---------------------------------------------\n')
+    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")
+          %(self.Iw_padded, self.Ih_padded, self.Ic))
+    print(("After padding with --> %s Method || Shape rows: %d , cols: %d, channels: %d ")
+          %(self.padding, self.Iw_padded, self.Ih_padded, self.Ic))
+    print(("lowering matrix shape rows: %d , cols: %d")
+          %(self.lowering_shape[0], self.lowering_shape[1]))
+    print("Lowering nnz = %d ,feature map nnz = %d"
+          %(self.tot_nz_lowering, self.tot_nz_feature))
+    print(("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")
+          %(self.ru, self.density_lowering))
+    print("Density Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix"
+          %(self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count))
+    print("\n############ END ***\/** object ############\n")
     

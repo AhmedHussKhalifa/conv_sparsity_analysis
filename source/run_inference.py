@@ -236,20 +236,20 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
     return 0
 
 
-def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, lowering_desity_channel):
+def cal_densityBound(layer):
 
     print(("Ow = %d ,Iw = %d ,Ih = %d ,Kw = %d ,sw = %d ,density_feature = %f , density_lowering = %f")
-        %(layer.Ow,layer.Iw,layer.Ih,layer.Kw,layer.Sw,ru, density_lowering))
+        %(layer.Ow,layer.Iw,layer.Ih,layer.Kw,layer.Sw,layer.ru, layer.density_lowering))
 
     print('\n------ Im2col vs CPO-------\n')
 
-    S1 = layer.Ow*layer.Kw/layer.Sw + layer.Kw/layer.Sw + layer.Ow + 1 + 2*ru*layer.Ih_padded*layer.Iw
+    S1 = layer.Ow*layer.Kw/layer.Sw + layer.Kw/layer.Sw + layer.Ow + 1 + 2*layer.ru*layer.Ih_padded*layer.Iw
     S2 = layer.Ow*layer.Kw*layer.Ih
     
     if (layer.Kw%layer.Sw) == 0:
         S1_cmp = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru # we should multiply by Ic here, create seperate functions for this
     elif (layer.Kw%layer.Sw) != 0:
-        S1_cmp = math.ceil(Kw/sw)*(Ow+1)+2*Ih*Iw*ru
+        S1_cmp = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru
         
     S_im2col = (math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*(math.ceil((layer.Ih-layer.Kh)/layer.Sh)+1)*layer.Kw*layer.Kh
     print(('S_Im2col (S4) : %f')% (S_im2col))
@@ -265,7 +265,7 @@ def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, loweri
     density_bound_mec = (layer.Ow*layer.Kw*layer.Ih - (layer.Ow*layer.Kw)/layer.Sw - layer.Kw/layer.Sw - layer.Ow - 1)
     density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw)
 
-    print(('MEC vs CPO S2-S1 : %f || with Feature_maps density = %f || Density bound MEC vs. CPO = %f')% (S_mec_cop, ru, density_bound_mec))
+    print(('MEC vs CPO S2-S1 : %f || with Feature_maps density = %f || Density bound MEC vs. CPO = %f')% (S_mec_cop, layer.ru, density_bound_mec))
     print(("Compression Ratio (MEC vs Im2col): %.2fx")%(S_im2col/S2))
     
     #######
@@ -274,23 +274,23 @@ def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, loweri
 
     # density_lowering = max(lowering_desity_channel)
     # CSCC - CPO
-    term1 = layer.Ow*density_lowering
+    term1 = layer.Ow*layer.density_lowering
     term2 = (layer.Ow+1)/(2*layer.Ih*layer.Sw)
     term0 = (layer.Kw/layer.Iw)
     # print(term0,term1,term2)
     density_bound_cscc = term0*(term1 - term2)
 
     term1 = (math.ceil((layer.Iw-layer.Kw)/layer.Sw)+2)
-    term2 = 2*(math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*layer.Kw*layer.Ih*density_lowering
+    term2 = 2*(math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*layer.Kw*layer.Ih*layer.density_lowering
     S_cscc = term1 + term2 #S3
     
-    term0 = (2*layer.Ow*layer.Ih*layer.Kw*density_lowering)
+    term0 = (2*layer.Ow*layer.Ih*layer.Kw*layer.density_lowering)
     tetm1 = (2*layer.Ih*layer.Iw*layer.ru)
     term2 = (layer.Kw/layer.Sw)*(layer.Ow+1)
     S_cscc_cpo = term0 - term1 - term2
 
     print(('S_cscc (S3) : %f')% (S_cscc))
-    print(('CSCC vs CPO S3-S1 : %f || with Lowering density = %f || Density bound CSCC vs. CPO = %f')% (S_cscc_cpo, density_lowering, density_bound_cscc))
+    print(('CSCC vs CPO S3-S1 : %f || with Lowering density = %f || Density bound CSCC vs. CPO = %f')% (S_cscc_cpo, layer.density_lowering, density_bound_cscc))
     print(("Compression Ratio (CSCC vs Im2col): %.2fx")%(S_im2col/S_cscc))
 
 
@@ -368,7 +368,7 @@ def feature_analysis(feature_maps, layer):
     layer.cal_density(lowering_matrix)
     layer.print_all()
 
-    # density_bound_mec, density_bound_cscc = cal_densityBound(layer, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
+    density_bound_mec, density_bound_cscc = cal_densityBound(layer)
 
     # print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
     # print('\n-------------\n')
