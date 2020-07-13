@@ -101,6 +101,7 @@ def get_DNN_info(sess):
                     #print('Layer Count: ', layer_count, n.name)
                     all_layers[layer_count].Sh = Sh
                     all_layers[layer_count].Sw = Sw
+                    all_layers[layer_count].padding_cal()
                     layer_count = layer_count + 1
                     #print (n.name, ' Strides: ' , [int(a) for a in n.attr['strides'].list.i])
 
@@ -235,11 +236,10 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
     return 0
 
 
-def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity_channel, lowering_desity_channel):
-    Kw = int(Kw)
-    Kh = int(Kh)
-    Ow = int(Ow)
-    print(("Ow = %d ,Iw = %d ,Ih = %d ,Kw = %d ,sw = %d ,density_feature = %f , density_lowering = %f")%(Ow,Iw,Ih,Kw,sw,ru, density_lowering))
+def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, lowering_desity_channel):
+
+    print(("Ow = %d ,Iw = %d ,Ih = %d ,Kw = %d ,sw = %d ,density_feature = %f , density_lowering = %f")
+        %(layer.Ow,layer.Iw,layer.Ih,layer.Kw,layer.Sw,ru, density_lowering))
 
     print('\n------ Im2col vs CPO-------\n')
 
@@ -297,10 +297,6 @@ def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity
     print('\n------ END of Analysis-------\n')
     
     return (density_bound_mec, density_bound_cscc)
-
-def np2tensor(arg):
-  arg = tf.convert_to_tensor(arg, dtype=tf.int32)
-  return arg
 
 def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     kw = int(kw)
@@ -368,47 +364,9 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
 def feature_analysis(feature_maps, layer):
     # feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
     
-    #Padding Feature Map
-    if (padding =='SAME'):
-        print("Padding --> ","SAME")
-
-
-        cal_Ow = math.ceil(float(layer.Ih) / float(layer.Sh))
-        cal_Oh  = math.ceil(float(layer.Iw) / float(layer.Sw))
-
-        pad_along_height = max((layer.Oh - 1) * layer.Sh +
-                            layer.Kh - layer.Ih, 0)
-        pad_along_width = max((layer.Ow - 1) * layer.Sw +
-                           layer.Kw - layer.Iw, 0)
-        pad_top = pad_along_height // 2
-        pad_bottom = pad_along_height - pad_top
-        pad_left = pad_along_width // 2
-        pad_right = pad_along_width - pad_left
-
-        print("tensorflow --> ",pad_top , pad_bottom, pad_left, pad_right)
-
-
-    elif (padding =='VALID'):
-        print("Padding --> ","VALID")
-        cal_Oh  = math.ceil(float(layer.Ih - layer.Kh + 1) / float(layer.Sh))
-        cal_Ow   = math.ceil(float(layer.Iw - layer.Kw + 1) / float(layer.Sw))
-        pad_top = 0
-        pad_bottom = 0
-        pad_left = 0
-        pad_right = 0
-    else:
-        print("ERROR in padding at inputs")
-        exit(0)
-
-    if ((Ow != cal_Ow) or (Oh != cal_Oh)):
-        print("ERROR in padding in dimensions")
-        exit(0)
-
-
-    paddings = np2tensor([[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]])
-    paddings = paddings.eval(session=tf.compat.v1.Session())
     #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
-    feature_maps = tf.pad(feature_maps, paddings, "CONSTANT",constant_values=0)
+    
+    feature_maps = tf.pad(feature_maps, layer.paddings, "CONSTANT",constant_values=0)
     feature_maps = feature_maps.eval(session=tf.compat.v1.Session())
     
     # END of padding calclations
@@ -418,7 +376,7 @@ def feature_analysis(feature_maps, layer):
     m_shape = np.shape(feature_maps)
     K       = feature_maps.shape[2]
 
-    lowering_matrix = np.empty((Ow,0), int)
+    lowering_matrix = np.empty((layer.Ow,0), int)
     print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(m_shape[0],m_shape[1],m_shape[2]))
     print(("Lowering Matrix shape rows: %d , cols: %d")%(lowering_matrix.shape[0],lowering_matrix.shape[1]))
     lowering_desity_channel = np.empty(0, float)
@@ -434,13 +392,13 @@ def feature_analysis(feature_maps, layer):
         count_channels = count_channels + 1;
         m_f = feature_maps[:, :, idx]  
         # Here we creates the lowering Matrix for MEC and CSCC
-        sub_tmp = np.empty((0,kw*m_shape[0]), int)
+        sub_tmp = np.empty((0,layer.Kw*m_shape[0]), int)
         # output
-        if ((kw>1) or (kh >1)):
-            for col_int in range(0, m_shape[1], sw):
-                if (col_int+kw)>m_shape[1] :
+        if ((layer.Kw>1) or (layer.Kh>1)):
+            for col_int in range(0, m_shape[1], layer.Sw):
+                if (col_int+layer.Kw)>m_shape[1] :
                     break
-                x = m_f[:,col_int:col_int+kw] # col_int+kw-1 without 1 bec it the stop element
+                x = m_f[:,col_int:col_int+layer.Kw] # col_int+kw-1 without 1 bec it the stop element
                 x = x.ravel(order='K') # K -> for row major && F -> for col major
                 x = np.reshape(x,(1,np.size(x)))
                 sub_tmp = np.append(sub_tmp, x, axis=0)
@@ -483,11 +441,12 @@ def feature_analysis(feature_maps, layer):
     Iw = m_shape[1]
     Ih = m_shape[0]
 
-    density_bound_mec, density_bound_cscc = cal_densityBound(Ow, Iw, Ih, kw, kh, sw, sh, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
+    # density_bound_mec, density_bound_cscc = cal_densityBound(Ow, Iw, Ih, kw, kh, sw, sh, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
 
+    # density_bound_mec, density_bound_cscc = cal_densityBound(layer, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
 
-    print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
-    print('\n-------------\n')
+    # print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
+    # print('\n-------------\n')
     return lowering_matrix, tot_nz_feature
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
@@ -513,7 +472,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
 
     # for layer in all_layers:
     print(np.shape(all_layers))
-    layer = all_layers[92]
+    layer = all_layers[4]
     print(layer)
     current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
