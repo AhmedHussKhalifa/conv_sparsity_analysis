@@ -2,7 +2,7 @@ import math
 import tensorflow as tf
 import numpy as np
 # input_tensor_name:
-# conv2d_layer_name:
+# conv2d_self_name:
 # input_shape:  Ih, Iw, Ic, In
 # kernal_shape: Kw, Kh, Sw, Sh 
 # output_shape: Ow, Oh,
@@ -10,7 +10,7 @@ import numpy as np
 # 
 
 class Conv_Layer(object):
-  """A simple class for handling conv layers."""
+  """A simple class for handling conv selfs."""
 
   def __init__(self, input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In=1, padding="VALID"):
     self.input_tensor_name  =  input_tensor_name
@@ -28,7 +28,7 @@ class Conv_Layer(object):
     self.In                 =  int(In)
     self.padding            =  padding
   def __str__(self):
-      s = ('=-=-=-=Conv_Layer=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+      s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
               \nKh: %d, Kw: %d, K: %d, padding: %s \
               \nSh: %d, Sw: %d \
               \nOh: %d, Ow: %d' % (self.input_tensor_name, self.output_tensor_name, \
@@ -75,7 +75,9 @@ class Conv_Layer(object):
       paddings = tf.convert_to_tensor(paddings, dtype=tf.int32)
       self.paddings = paddings.eval(session=tf.compat.v1.Session())
        
-  def padding_image(self, feature_maps):
+  # Here we should add the padding, lowering matrix reps, etc
+  
+  def image_padding(self, feature_maps):
       #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
       feature_maps    = tf.pad(feature_maps, self.paddings, "CONSTANT",constant_values=0)
       feature_maps    = feature_maps.eval(session=tf.compat.v1.Session())
@@ -85,4 +87,70 @@ class Conv_Layer(object):
       resol_feature   = self.Iw_padded*self.Ih_padded*self.Ic
       self.ru = self.tot_nz_feature/resol_feature
       return feature_maps
-  # Here we should add the intermediate matrix reps, etc
+  
+  def lowering_rep(self, feature_maps):
+    lowering_matrix = np.empty((self.Ow,0), int)
+    self.lowering_desity_channel = np.empty(0, float)
+    self.feature_desity_channel  = np.empty(0, float)
+    self.last_channel_cal = self.Ic
+    
+    #############################################
+    # Not the most important information we need
+    self.lower_desity_count = 0
+    self.feature_desity_count = 0
+    self.both_feature_lowering = 0
+    #############################################
+    
+    for idx in range(self.last_channel_cal):
+        m_f = feature_maps[:, :, idx]  
+        # Here we creates the lowering Matrix for MEC and CSCC
+        sub_tmp = np.empty((0,self.Kw*self.Ih_padded), int)
+        if ((self.Kw>1) or (self.Kh>1)):
+            for col_int in range(0, self.Iw_padded, self.Sw):
+                if (col_int+self.Kw)>self.Iw_padded :
+                    break
+                x = m_f[:,col_int:col_int+self.Kw] # col_int+kw-1 without 1 bec it the stop element
+                x = x.ravel(order='K') # K -> for row major && F -> for col major
+                x = np.reshape(x,(1,np.size(x)))
+                sub_tmp = np.append(sub_tmp, x, axis=0)
+        else:
+            sub_tmp = m_f.transpose();
+        
+        lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
+        self.lowering_desity_channel = np.append( self.lowering_desity_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
+        self.feature_desity_channel = np.append(self.feature_desity_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
+
+        if (self.feature_desity_channel[idx] < self.lowering_desity_channel[idx] ):
+            # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
+            self.lower_desity_count = self.lower_desity_count + 1
+        elif (self.feature_desity_channel[idx] < self.lowering_desity_channel[idx] ):
+            # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
+            self.feature_desity_count = self.feature_desity_count + 1
+        else:
+            self.both_feature_lowering = self.feature_desity_count + 1
+            # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
+
+    return lowering_matrix
+
+  def cal_density(self, lowering_matrix):  
+    self.lowering_shape = np.shape(lowering_matrix)
+    resol_lowering = self.lowering_shape[0]*self.lowering_shape[1]
+    self.tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
+    
+    # Here if you want to select a specific end for your calc 
+    if (self.last_channel_cal != self.Ic):
+      self.tot_nz_feature = np.size(feature_maps[feature_maps[:,:,::last_channel] != 0.0])
+      resol_feature = self.Iw_padded*self.Ih_padded*last_channel
+      self.ru = tot_nz_feature/resol_feature
+
+    self.density_lowering = self.tot_nz_lowering/resol_lowering
+
+  def print_all(self):
+    print("\n ############ Print Layer object ############\n")
+    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(self.Iw_padded, self.Ih_padded, self.Ic))
+    print("lowering matrix shape:", self.lowering_shape)
+    print("Lowering nnz = %d ,feature map nnz = %d"%(self.tot_nz_lowering, self.tot_nz_feature))
+    print(("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")%(self.ru, self.density_lowering))
+    print("Density Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix"%(self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count))
+    print("\n ############ END ***\/** object ############\n")
+    

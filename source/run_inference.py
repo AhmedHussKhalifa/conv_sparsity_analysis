@@ -363,83 +363,16 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
 
 def feature_analysis(feature_maps, layer):
 
-    feature_maps = layer.padding_image(feature_maps)
+    feature_maps = layer.image_padding(feature_maps)
+    lowering_matrix = layer.lowering_rep(feature_maps)
+    layer.cal_density(lowering_matrix)
+    layer.print_all()
 
-    # Cal the shape after padding
-
-    m_shape = np.shape(feature_maps)
-
-    lowering_matrix = np.empty((layer.Ow,0), int)
-    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(layer.Iw_padded, layer.Ih_padded, layer.K))
-    print(("Lowering Matrix shape rows: %d , cols: %d")%(lowering_matrix.shape[0],lowering_matrix.shape[1]))
-    lowering_desity_channel = np.empty(0, float)
-    feature_desity_channel  = np.empty(0, float)
-    
-    count_channels = 0
-    
-    lower_desity_count = 0
-    feature_desity_count = 0
-    both_feature_lowering = 0
-    
-    for idx in range(layer.Ic):
-        count_channels = count_channels + 1;
-        m_f = feature_maps[:, :, idx]  
-        # Here we creates the lowering Matrix for MEC and CSCC
-        sub_tmp = np.empty((0,layer.Kw*layer.Ih_padded), int)
-        if ((layer.Kw>1) or (layer.Kh>1)):
-            for col_int in range(0, layer.Iw_padded, layer.Sw):
-                if (col_int+layer.Kw)>layer.Iw_padded :
-                    break
-                x = m_f[:,col_int:col_int+layer.Kw] # col_int+kw-1 without 1 bec it the stop element
-                x = x.ravel(order='K') # K -> for row major && F -> for col major
-                x = np.reshape(x,(1,np.size(x)))
-                sub_tmp = np.append(sub_tmp, x, axis=0)
-        else:
-            sub_tmp = m_f.transpose();
-        lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
-        lowering_desity_channel = np.append(lowering_desity_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
-        feature_desity_channel = np.append(feature_desity_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
-
-        if (feature_desity_channel[idx] < lowering_desity_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
-            lower_desity_count = lower_desity_count + 1
-        elif (feature_desity_channel[idx] < lowering_desity_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
-            feature_desity_count = feature_desity_count + 1
-        else:
-            both_feature_lowering = feature_desity_count + 1
-            # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
-
-    print("Counts : Feature Map --> [%d, %d , %d] <-- Lowering "%(feature_desity_count, both_feature_lowering , lower_desity_count))
-    # print("Desity per channel of lowering matrix : ",lowering_desity_channel)
-    # print("Desity  per channel of feature matrix : ",feature_desity_channel)
-    lowering_shape = np.shape(lowering_matrix)
-    print("lowering matrix shape:", lowering_shape)
-    resol_lowering = lowering_shape[0]*lowering_shape[1]
-    resol_feature = layer.Iw_padded*layer.Ih_padded*count_channels
-
-    # BOUNDS CAL
-    tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
-    tot_nz_feature = np.size(feature_maps[feature_maps != 0.0])
-
-    print("Lowering nnz = %d ,feature map nnz = %d"%(tot_nz_lowering, tot_nz_feature))
-
-    density_lowering = tot_nz_lowering/resol_lowering
-    density_feature = tot_nz_feature/resol_feature
-
-    print (("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")%(density_feature, density_lowering))
-    
-     
-    Iw = m_shape[1]
-    Ih = m_shape[0]
-
-    # density_bound_mec, density_bound_cscc = cal_densityBound(Ow, Iw, Ih, kw, kh, sw, sh, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
-
-    density_bound_mec, density_bound_cscc = cal_densityBound(layer, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
+    # density_bound_mec, density_bound_cscc = cal_densityBound(layer, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
 
     # print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
     # print('\n-------------\n')
-    return lowering_matrix, tot_nz_feature
+    return lowering_matrix, layer.tot_nz_feature
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
