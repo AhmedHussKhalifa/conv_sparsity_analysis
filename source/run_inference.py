@@ -365,7 +365,7 @@ def featureMap_stats(feature_maps, layer):
     lowering_matrix = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
     print(getSpaceCPO(layer))
-    
+    print(getDensityBoundLoweringDensityCSCC(layer))
     for key in conv_methods:
         if (conv_methods[key] == SparsityMethodTypes.CPO.value):
             pass
@@ -406,7 +406,11 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     else:
         predictions = sess.run(softmax_tensor, {input_tensor_name: sess.run(image_data)})
 
-
+    count_Kw_Kh = 0
+    for layer in all_layers:
+        if (layer.Kw == 1 and layer.Kh == 1):
+            count_Kw_Kh = count_Kw_Kh + 1
+    print("kw = 1 , kh = 1 counts", count_Kw_Kh)
     # for layer in all_layers:
     print(np.shape(all_layers))
     layer = all_layers[4]
