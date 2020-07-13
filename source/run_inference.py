@@ -243,15 +243,15 @@ def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, loweri
 
     print('\n------ Im2col vs CPO-------\n')
 
-    S1 = Ow*Kw/sw + Kw/sw + Ow + 1 + 2*ru*Ih*Iw
-    S2 = Ow*Kw*Ih
+    S1 = layer.Ow*layer.Kw/layer.Sw + layer.Kw/layer.Sw + layer.Ow + 1 + 2*ru*layer.Ih_padded*layer.Iw
+    S2 = layer.Ow*layer.Kw*layer.Ih
     
-    if (Kw%sw) == 0:
-        S1_cmp = (Kw/sw)*(Ow+1)+2*Ih*Iw*ru # we should multiply by Ic here, create seperate functions for this
-    elif (Kw%sw) != 0:
+    if (layer.Kw%layer.Sw) == 0:
+        S1_cmp = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru # we should multiply by Ic here, create seperate functions for this
+    elif (layer.Kw%layer.Sw) != 0:
         S1_cmp = math.ceil(Kw/sw)*(Ow+1)+2*Ih*Iw*ru
         
-    S_im2col = (math.ceil((Iw-Kw)/sw)+1)*(math.ceil((Ih-Kh)/sh)+1)*Kw*Kh
+    S_im2col = (math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*(math.ceil((layer.Ih-layer.Kh)/layer.Sh)+1)*layer.Kw*layer.Kh
     print(('S_Im2col (S4) : %f')% (S_im2col))
     print(('Im2col vs CPO S4-S1 : %f ')% (S_im2col-S1))
     print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
@@ -262,8 +262,8 @@ def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, loweri
     print(("MEC (S2) = %f  && CPO (S1) = %f")%(S2,S1))
     
     # print('Value of ru = %f , S1 = %f , S2 = %f, S2-S1= %f'%(ru, S1, S2, S_mec_cop))
-    density_bound_mec = (Ow*Kw*Ih - (Ow*Kw)/sw - Kw/sw - Ow - 1)
-    density_bound_mec = density_bound_mec / (2*Ih*Iw)
+    density_bound_mec = (layer.Ow*layer.Kw*layer.Ih - (layer.Ow*layer.Kw)/layer.Sw - layer.Kw/layer.Sw - layer.Ow - 1)
+    density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw)
 
     print(('MEC vs CPO S2-S1 : %f || with Feature_maps density = %f || Density bound MEC vs. CPO = %f')% (S_mec_cop, ru, density_bound_mec))
     print(("Compression Ratio (MEC vs Im2col): %.2fx")%(S_im2col/S2))
@@ -274,19 +274,19 @@ def cal_densityBound(layer, ru, density_lowering, feature_desity_channel, loweri
 
     # density_lowering = max(lowering_desity_channel)
     # CSCC - CPO
-    term1 = Ow*density_lowering
-    term2 = (Ow+1)/(2*Ih*sw)
-    term0 = (Kw/Iw)
+    term1 = layer.Ow*density_lowering
+    term2 = (layer.Ow+1)/(2*layer.Ih*layer.Sw)
+    term0 = (layer.Kw/layer.Iw)
     # print(term0,term1,term2)
     density_bound_cscc = term0*(term1 - term2)
 
-    term1 = (math.ceil((Iw-Kw)/sw)+2)
-    term2 = 2*(math.ceil((Iw-Kw)/sw)+1)*Kw*Ih*density_lowering
+    term1 = (math.ceil((layer.Iw-layer.Kw)/layer.Sw)+2)
+    term2 = 2*(math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*layer.Kw*layer.Ih*density_lowering
     S_cscc = term1 + term2 #S3
     
-    term0 = (2*Ow*Ih*Kw*density_lowering)
-    tetm1 = (2*Ih*Iw*ru)
-    term2 = (Kw/sw)*(Ow+1)
+    term0 = (2*layer.Ow*layer.Ih*layer.Kw*density_lowering)
+    tetm1 = (2*layer.Ih*layer.Iw*layer.ru)
+    term2 = (layer.Kw/layer.Sw)*(layer.Ow+1)
     S_cscc_cpo = term0 - term1 - term2
 
     print(('S_cscc (S3) : %f')% (S_cscc))
@@ -435,7 +435,7 @@ def feature_analysis(feature_maps, layer):
 
     # density_bound_mec, density_bound_cscc = cal_densityBound(Ow, Iw, Ih, kw, kh, sw, sh, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
 
-    # density_bound_mec, density_bound_cscc = cal_densityBound(layer, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
+    density_bound_mec, density_bound_cscc = cal_densityBound(layer, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
 
     # print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
     # print('\n-------------\n')

@@ -1,5 +1,6 @@
 import math
-import tensorflow as tf 
+import tensorflow as tf
+import numpy as np
 # input_tensor_name:
 # conv2d_layer_name:
 # input_shape:  Ih, Iw, Ic, In
@@ -80,5 +81,8 @@ class Conv_Layer(object):
       feature_maps    = feature_maps.eval(session=tf.compat.v1.Session())
       self.Ih_padded  = feature_maps.shape[0]
       self.Iw_padded  = feature_maps.shape[1]
+      self.tot_nz_feature = np.size(feature_maps[feature_maps != 0.0])
+      resol_feature   = self.Iw_padded*self.Ih_padded*self.Ic
+      self.ru = self.tot_nz_feature/resol_feature
       return feature_maps
   # Here we should add the intermediate matrix reps, etc
