@@ -90,6 +90,7 @@ def get_DNN_info(sess):
                 all_layers.append(conv_layer)
         except ValueError:
             print('%s is an Op.' % n.name)
+
     return all_layers
 
 # ---- 
@@ -545,7 +546,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
 
     # for layer in all_layers:
     print(np.shape(all_layers))
-    layer = all_layers[92]
+    layer = all_layers[3]
     print(layer)
     current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
