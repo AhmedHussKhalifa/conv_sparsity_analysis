@@ -34,6 +34,8 @@ class Conv_Layer(object):
               \nOh: %d, Ow: %d' % (self.input_tensor_name, self.output_tensor_name, \
               self.In, self.Ic, self.Ih, self.Iw, \
               self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow))
+      print('\n---------------------------------------------\n')
+      print_all(self)
       return s
 
   def padding_cal(self):
@@ -145,8 +147,6 @@ class Conv_Layer(object):
 
   def print_all(self):
     print("\n############ Print Layer object ############\n")
-    print(self)
-    print('\n---------------------------------------------\n')
     print(("Feature Map shape rows: %d , cols: %d, channels: %d ")
           %(self.Iw_padded, self.Ih_padded, self.Ic))
     print(("After padding with --> %s Method || Shape rows: %d , cols: %d, channels: %d ")

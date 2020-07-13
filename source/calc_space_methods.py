@@ -10,7 +10,6 @@ from conv_layer import Conv_Layer
 # Calculates the required memory units for the **CPO** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCPO(layer, is_for_density_calc=True):
-
     if is_for_density_calc:
         # use the assumption of Ic = 1 && In = 1
         space = (layer.Ow*layer.Kw)/layer.sw + (layer.Kw/layer.sw) + layer.Ow + 1 + 2*(layer.ru*layer.Ih*layer.Iw)
@@ -23,7 +22,6 @@ def getSpaceCPO(layer, is_for_density_calc=True):
     return space
 
 def getSpaceCPS(layer, is_for_density_calc=True):
-
     if is_for_density_calc:
         # use the assumption of Ic = 1 && In = 1
         space = 1
@@ -35,7 +33,6 @@ def getSpaceCPS(layer, is_for_density_calc=True):
 # Calculates the required memory units for the **MEC**  method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceMEC(layer, is_for_density_calc=True):
-
     if is_for_density_calc:
         space = layer.Ow*layer.Kw*layer.Ih
     else:
@@ -44,20 +41,19 @@ def getSpaceMEC(layer, is_for_density_calc=True):
 
 # Calculates the required memory units for the **CSCC** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
-def getSpaceCSCC(layer, is_for_density_calc=True):
-    
+def getSpaceCSCC(layer, is_for_density_calc=True): 
     if is_for_density_calc:
-        space = 0
+        space = (layer.Ow + 1) + (2*layer.density_lowering*layer.Ow*layer.Ih*layer.Kw)
     else:
-        space = 1
+        space = (layer.Ow + 1) + (2*layer.density_lowering*layer.Ow*layer.Ih*layer.Kw*layer.Ic)
     return space
 
 # Calculates the required memory units for the **Im2Col** method
 def getSpaceIm2Col(layer, is_for_density_calc=True):
     if is_for_density_calc:
-        space = 0
+        space = layer.Ow*layer.Oh*layer.Kw*layer.Kh
     else:
-        space = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru
+        space = layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
     return space
 
 

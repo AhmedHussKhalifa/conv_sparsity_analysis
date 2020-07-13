@@ -367,6 +367,9 @@ def feature_analysis(feature_maps, layer):
 
     density_bound_mec, density_bound_cscc = cal_densityBound(layer)
 
+    # assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value)
+
+
     # print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
     # print('\n-------------\n')
     return lowering_matrix, layer.tot_nz_feature
