@@ -362,22 +362,15 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     return pattern_set_perc
 
 def feature_analysis(feature_maps, layer):
-    # feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
-    
-    #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
-    
-    feature_maps = tf.pad(feature_maps, layer.paddings, "CONSTANT",constant_values=0)
-    feature_maps = feature_maps.eval(session=tf.compat.v1.Session())
-    
-    # END of padding calclations
+
+    feature_maps = layer.padding_image(feature_maps)
 
     # Cal the shape after padding
 
     m_shape = np.shape(feature_maps)
-    K       = feature_maps.shape[2]
 
     lowering_matrix = np.empty((layer.Ow,0), int)
-    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(m_shape[0],m_shape[1],m_shape[2]))
+    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(layer.Iw_padded, layer.Ih_padded, layer.K))
     print(("Lowering Matrix shape rows: %d , cols: %d")%(lowering_matrix.shape[0],lowering_matrix.shape[1]))
     lowering_desity_channel = np.empty(0, float)
     feature_desity_channel  = np.empty(0, float)
@@ -388,15 +381,14 @@ def feature_analysis(feature_maps, layer):
     feature_desity_count = 0
     both_feature_lowering = 0
     
-    for idx in range(K):
+    for idx in range(layer.Ic):
         count_channels = count_channels + 1;
         m_f = feature_maps[:, :, idx]  
         # Here we creates the lowering Matrix for MEC and CSCC
-        sub_tmp = np.empty((0,layer.Kw*m_shape[0]), int)
-        # output
+        sub_tmp = np.empty((0,layer.Kw*layer.Ih_padded), int)
         if ((layer.Kw>1) or (layer.Kh>1)):
-            for col_int in range(0, m_shape[1], layer.Sw):
-                if (col_int+layer.Kw)>m_shape[1] :
+            for col_int in range(0, layer.Iw_padded, layer.Sw):
+                if (col_int+layer.Kw)>layer.Iw_padded :
                     break
                 x = m_f[:,col_int:col_int+layer.Kw] # col_int+kw-1 without 1 bec it the stop element
                 x = x.ravel(order='K') # K -> for row major && F -> for col major
@@ -424,7 +416,7 @@ def feature_analysis(feature_maps, layer):
     lowering_shape = np.shape(lowering_matrix)
     print("lowering matrix shape:", lowering_shape)
     resol_lowering = lowering_shape[0]*lowering_shape[1]
-    resol_feature = m_shape[0]*m_shape[1]*count_channels
+    resol_feature = layer.Iw_padded*layer.Ih_padded*count_channels
 
     # BOUNDS CAL
     tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])

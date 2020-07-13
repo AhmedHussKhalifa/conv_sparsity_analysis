@@ -26,8 +26,6 @@ class Conv_Layer(object):
     self.Ic                 =  int(Ic)
     self.In                 =  int(In)
     self.padding            =  padding
-    self.paddings           =  0
-    print(self.input_tensor_name, self.Kw, self.Kh, self.Sw, self.Sh)
   def __str__(self):
       s = ('=-=-=-=Conv_Layer=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
               \nKh: %d, Kw: %d, K: %d, padding: %s \
@@ -56,8 +54,6 @@ class Conv_Layer(object):
           # print("tensorflow --> ",pad_top , pad_bottom, pad_left, pad_right)
       elif (self.padding =='VALID'):
           # print("Padding --> ","VALID")
-          # print(self.Ih, self.Kh, self.Sh)
-          # print("### Conv_Layer ###", float(self.Ih - self.Kh + 1))
           cal_Oh  = math.ceil(float(self.Ih - self.Kh + 1) / abs(float(self.Sh)))
           cal_Ow   = math.ceil(float(self.Iw - self.Kw + 1) / abs(float(self.Sw)))
           pad_top = 0
@@ -72,11 +68,17 @@ class Conv_Layer(object):
           print(self)
           print(("Calculated --> Ow = %d, Oh = %d, Actual --> Ow = %d, Oh = %d")%(cal_Ow, cal_Oh, self.Ow, self.Oh))
           print("ERROR in padding in dimensions")
-          exit(0)
+          # exit(0)
 
       paddings = [[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]]
       paddings = tf.convert_to_tensor(paddings, dtype=tf.int32)
       self.paddings = paddings.eval(session=tf.compat.v1.Session())
        
-      
+  def padding_image(self, feature_maps):
+      #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
+      feature_maps    = tf.pad(feature_maps, self.paddings, "CONSTANT",constant_values=0)
+      feature_maps    = feature_maps.eval(session=tf.compat.v1.Session())
+      self.Ih_padded  = feature_maps.shape[0]
+      self.Iw_padded  = feature_maps.shape[1]
+      return feature_maps
   # Here we should add the intermediate matrix reps, etc
