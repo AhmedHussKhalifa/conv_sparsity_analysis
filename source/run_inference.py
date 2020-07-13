@@ -236,13 +236,6 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
 
 
 def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity_channel, lowering_desity_channel):
-    # Iw = 1
-    # Ih = 1
-    # sw = 1
-    # Kw = 1
-    # ru = 1
-    # density_lowering = 1
-    # Ow = 1
     Kw = int(Kw)
     Kh = int(Kh)
     Ow = int(Ow)
@@ -262,7 +255,6 @@ def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity
     print(('S_Im2col (S4) : %f')% (S_im2col))
     print(('Im2col vs CPO S4-S1 : %f ')% (S_im2col-S1))
     print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
-    #print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1))
 
     print('------ MEC vs CPO -------\n')
     #MEC - CPO
@@ -306,7 +298,7 @@ def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity
     
     return (density_bound_mec, density_bound_cscc)
 
-def my_func(arg):
+def np2tensor(arg):
   arg = tf.convert_to_tensor(arg, dtype=tf.int32)
   return arg
 
@@ -315,7 +307,6 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     kh = int(kh)
     sw = int(sw)
     sh = int(sh)
-
 
     print('Patterns Calculations')
     tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
@@ -424,19 +415,19 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
         exit(0)
 
 
-    paddings = my_func([[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]])
+    paddings = np2tensor([[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]])
     paddings = paddings.eval(session=tf.compat.v1.Session())
     #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
     feature_maps = tf.pad(feature_maps, paddings, "CONSTANT",constant_values=0)
     feature_maps = feature_maps.eval(session=tf.compat.v1.Session())
     
     # END of padding calclations
+
     # Cal the shape after padding
+
     m_shape = np.shape(feature_maps)
     K       = feature_maps.shape[2]
 
-    # lowering_matrix = np.empty((m_shape[1]-kw+1,kw*m_shape[1]*m_shape[2]), int)
-    # lowering_matrix = np.empty((m_shape[1]-kw+1,0), int)
     lowering_matrix = np.empty((Ow,0), int)
     print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(m_shape[0],m_shape[1],m_shape[2]))
     print(("Lowering Matrix shape rows: %d , cols: %d")%(lowering_matrix.shape[0],lowering_matrix.shape[1]))
@@ -450,20 +441,11 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
     both_feature_lowering = 0
     
     for idx in range(K):
-    # for idx in range(0,20):
         count_channels = count_channels + 1;
         m_f = feature_maps[:, :, idx]  
-        # #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
-        # m_f = tf.pad(m_f, paddings, "CONSTANT",constant_values=0)
-        # m_f = m_f.eval(session=tf.compat.v1.Session())
-        # print("After Padding: ",m_f.shape)
         # Here we creates the lowering Matrix for MEC and CSCC
-        # for channels in range(0,m_shape[0]):
         sub_tmp = np.empty((0,kw*m_shape[0]), int)
-        # print("Feature_maps: \n")
         # output
-        # print(m_f)
-        # for col_int in range(0,m_shape[1]-kw+1,sw):
         if ((kw>1) or (kh >1)):
             for col_int in range(0, m_shape[1], sw):
                 if (col_int+kw)>m_shape[1] :
@@ -471,23 +453,10 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
                 x = m_f[:,col_int:col_int+kw] # col_int+kw-1 without 1 bec it the stop element
                 x = x.ravel(order='K') # K -> for row major && F -> for col major
                 x = np.reshape(x,(1,np.size(x)))
-                # print("x shape : ", x.shape)
                 sub_tmp = np.append(sub_tmp, x, axis=0)
-                # print(("Start: %d, End: %d")%(col_int,col_int+kw))
-                # print("sub_tmp: \n", sub_tmp)
-                # print("sub shape : ", sub_tmp.shape)
         else:
             sub_tmp = m_f.transpose();
-        # exit(0)
-        # print(m_f)
-        # print("Final sub shape : ", sub_tmp.shape)
         lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
-        # print("lowering_matrix : ", lowering_matrix.shape)
-        # print(np.shape(sub_tmp))
-        # print(np.shape(lowering_matrix))
-        # print(("Channel #%d")%(idx))
-        # print(lowering_matrix)
-        # exit(0)
         lowering_desity_channel = np.append(lowering_desity_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
         feature_desity_channel = np.append(feature_desity_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
 
@@ -508,7 +477,6 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
     print("lowering matrix shape:", lowering_shape)
     resol_lowering = lowering_shape[0]*lowering_shape[1]
     resol_feature = m_shape[0]*m_shape[1]*count_channels
-    # resol_feature = m_shape[0]*m_shape[1] # without channels
 
     # BOUNDS CAL
     tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
@@ -525,20 +493,13 @@ def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
     Iw = m_shape[1]
     Ih = m_shape[0]
 
-    # cal_densityBound(Ow,Iw,Ih,Kw,sw,ru, density_lowering, feature_desity_channel, lowering_desity_channel):
-
     density_bound_mec, density_bound_cscc = cal_densityBound(Ow, Iw, Ih, kw, kh, sw, sh, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
 
 
     print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
     print('\n-------------\n')
     return lowering_matrix, tot_nz_feature
-def compare(a, b, encoding="utf8"):
-    if isinstance(a, bytes):
-        a = a.decode(encoding)
-    if isinstance(b, bytes):
-        b = b.decode(encoding)
-    return a == b
+
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
     # predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data}) # n, m, 3
