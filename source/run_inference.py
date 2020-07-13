@@ -88,6 +88,36 @@ def get_DNN_info(sess):
             
             #print(n.name)
             if 'Conv2D' in n.name:
+
+                output_tensor_name = n.name + ':0'
+
+                input_tensor_name = n.input[0] + ':0'
+                input_tensor      = sess.graph.get_tensor_by_name(input_tensor_name)
+                Ih = input_tensor.shape[1]
+                Iw = input_tensor.shape[2]
+                Ic = input_tensor.shape[3]
+
+                conv_tensor_params_name = n.input[1] + ':0'
+                conv_tensor_params      = sess.graph.get_tensor_by_name(conv_tensor_params_name)
+                filter_shape = conv_tensor_params.shape
+                Kh           = filter_shape[0]
+                Kw           = filter_shape[1]
+                K            = filter_shape[3]
+                print(input_tensor, 'Hello')
+                print(conv_tensor_params)
+                print(all_layers[0])
+               
+
+                print('print x')
+                x = n.attr['__output_shapes'].list
+                print(x)
+                Oh = n.attr['_output_shapes'].list.shape[0].dim[1].size
+                Ow = n.attr['_output_shapes'].list.shape[0].dim[2].size
+
+                print('outs: ', Oh, Ow)
+                print('----')
+                exit(0)
+                #print(n)
                 if 'padding' in n.attr.keys():
                     padding_type = n.attr['padding'].s.decode(encoding='utf-8')
                     all_layers[layer_count].padding = padding_type
@@ -103,7 +133,10 @@ def get_DNN_info(sess):
                     all_layers[layer_count].Sw = Sw
                     layer_count = layer_count + 1
                     #print (n.name, ' Strides: ' , [int(a) for a in n.attr['strides'].list.i])
-
+                
+                # New
+                conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic)
+                all_layers.append(conv_layer)
         except ValueError:
             print('%s is an Op.' % n.name)
    
