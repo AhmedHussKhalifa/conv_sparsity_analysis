@@ -37,9 +37,9 @@ def getSpaceCPS(layer, is_for_density_calc=True):
 def getSpaceMEC(layer, is_for_density_calc=True):
 
     if is_for_density_calc:
-        space = 0
+        space = layer.Ow*layer.Kw*layer.Ih
     else:
-        space = 1
+        space = layer.Ow*layer.Kw*layer.Ih*layer.Ic
     return space
 
 # Calculates the required memory units for the **CSCC** method

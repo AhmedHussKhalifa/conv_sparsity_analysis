@@ -238,9 +238,6 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
 
 def cal_densityBound(layer):
 
-    print(("Ow = %d ,Iw = %d ,Ih = %d ,Kw = %d ,sw = %d ,density_feature = %f , density_lowering = %f")
-        %(layer.Ow,layer.Iw,layer.Ih,layer.Kw,layer.Sw,layer.ru, layer.density_lowering))
-
     print('\n------ Im2col vs CPO-------\n')
 
     S1 = layer.Ow*layer.Kw/layer.Sw + layer.Kw/layer.Sw + layer.Ow + 1 + 2*layer.ru*layer.Ih_padded*layer.Iw
