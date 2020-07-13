@@ -26,6 +26,7 @@ from model_names import Models
 from code_modes  import CodeMode
 from conv_layer import Conv_Layer
 from calc_space_methods import *
+from sparsity_method_types import SparsityMethodTypes
 
 # import imagenet_preprocessing as ipp
 from preprocessing import inception_preprocessing, vgg_preprocessing
@@ -358,14 +359,25 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     print('\n-------------\n')
     return pattern_set_perc
 
-def feature_analysis(feature_maps, layer):
+def featureMap_stats(feature_maps, layer):
 
     feature_maps = layer.image_padding(feature_maps)
     lowering_matrix = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
-    layer.print_all()
-
-    density_bound_mec, density_bound_cscc = cal_densityBound(layer)
+    print(getSpaceCPO(layer))
+    
+    for key in conv_methods:
+        if (conv_methods[key] == SparsityMethodTypes.CPO.value):
+            pass
+        elif (conv_methods[key] == SparsityMethodTypes.CPS.value):
+            pass
+        elif (conv_methods[key] == SparsityMethodTypes.MEC.value):
+            pass
+        elif (conv_methods[key] == SparsityMethodTypes.CSCC.value):
+            pass
+        elif (conv_methods[key] == SparsityMethodTypes.Im2Col.value):
+            pass
+    # density_bound_mec, density_bound_cscc = cal_densityBound(layer)
 
     # assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value)
 
@@ -404,8 +416,9 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # print(current_feature_map.shape)
     current_feature_map = np.squeeze(current_feature_map)
     # lowering_matrix, tot_nz_feature = feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
-    lowering_matrix, tot_nz_feature = feature_analysis(current_feature_map, layer)
-    CPO = overlap_cal(lowering_matrix, layer.Kw  ,layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
+    lowering_matrix, tot_nz_feature = featureMap_stats(current_feature_map, layer)
+    CPO = overlap_cal(lowering_matrix, layer.Kw, layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
+    print(layer)
     exit(0)
 
     #relu_conv_tensor = sess.graph.get_tensor_by_name('mixed_' + str(layerID) + '/join:0')
@@ -724,8 +737,11 @@ if __name__ == '__main__':
       help='Recommended batch size is 100, so set it to 10 if you are running All CodeMode'  
   )
 
-    FLAGS, unparsed = parser.parse_known_args()  
-
+    FLAGS, unparsed = parser.parse_known_args()
+    print("\n############ Here WTF ############\n")
+    print(FLAGS.model_name)
+    print(SparsityMethodTypes.getModelByValue(1))
+    print(SparsityMethodTypes.getModelByName('CPO'))
+    print("\n############ END  WTF ############\n")
 
 tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)  
-

@@ -28,14 +28,37 @@ class Conv_Layer(object):
     self.In                 =  int(In)
     self.padding            =  padding
   def __str__(self):
-      s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
-              \nKh: %d, Kw: %d, K: %d, padding: %s \
-              \nSh: %d, Sw: %d \
-              \nOh: %d, Ow: %d' % (self.input_tensor_name, self.output_tensor_name, \
-              self.In, self.Ic, self.Ih, self.Iw, \
-              self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow))
-      print('\n---------------------------------------------\n')
-      print_all(self)
+      try:
+        s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+                \nKh: %d, Kw: %d, K: %d, padding: %s \
+                \nSh: %d, Sw: %d \
+                \nOh: %d, Ow: %d \
+                \nFeature Map shape rows: %d , cols: %d, channels: %d \
+                \nAfter padding with --> %s Method || Shape rows: %d , cols: %d, channels: %d \
+                \nlowering matrix shape rows: %d , cols: %d \
+                \nLowering nnz = %d ,feature map nnz = %d \
+                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix \
+                \nDensity Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix' %
+                (
+                self.input_tensor_name, self.output_tensor_name, \
+                self.In, self.Ic, self.Ih, self.Iw, \
+                self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow, \
+                self.Iw_padded, self.Ih_padded, self.Ic, \
+                self.padding, self.Iw_padded, self.Ih_padded, self.Ic, \
+                self.lowering_shape[0], self.lowering_shape[1], \
+                self.tot_nz_lowering, self.tot_nz_feature, \
+                self.ru, self.lowering_density, \
+                self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count
+                )
+            )
+      except:
+                s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+                \nKh: %d, Kw: %d, K: %d, padding: %s \
+                \nSh: %d, Sw: %d \
+                \nOh: %d, Ow: %d \
+                \nMISSING INFO after Calcuations are CALLED\\DONE\n' % (self.input_tensor_name, self.output_tensor_name, \
+                self.In, self.Ic, self.Ih, self.Iw, \
+                self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow))
       return s
 
   def padding_cal(self):
@@ -66,7 +89,7 @@ class Conv_Layer(object):
           exit(0)
 
       if ((self.Ow != cal_Ow) or (self.Oh != cal_Oh)):
-          print(self)
+          # print(self)
           print(("Calculated --> Ow = %d, Oh = %d, Actual --> Ow = %d, Oh = %d")%(cal_Ow, cal_Oh, self.Ow, self.Oh))
           print("ERROR in padding in dimensions")
           # exit(0)
@@ -90,7 +113,7 @@ class Conv_Layer(object):
   
   def lowering_rep(self, feature_maps):
     lowering_matrix = np.empty((self.Ow,0), int)
-    self.lowering_desity_channel = np.empty(0, float)
+    self.lowering_density_channel = np.empty(0, float)
     self.feature_desity_channel  = np.empty(0, float)
     self.last_channel_cal = self.Ic
     
@@ -117,18 +140,18 @@ class Conv_Layer(object):
             sub_tmp = m_f.transpose();
         
         lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
-        self.lowering_desity_channel = np.append( self.lowering_desity_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
+        self.lowering_density_channel = np.append( self.lowering_density_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
         self.feature_desity_channel = np.append(self.feature_desity_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
 
-        if (self.feature_desity_channel[idx] < self.lowering_desity_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
+        if (self.feature_desity_channel[idx] < self.lowering_density_channel[idx] ):
+            # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
             self.lower_desity_count = self.lower_desity_count + 1
-        elif (self.feature_desity_channel[idx] > self.lowering_desity_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
+        elif (self.feature_desity_channel[idx] > self.lowering_density_channel[idx] ):
+            # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
             self.feature_desity_count = self.feature_desity_count + 1
         else:
             self.both_feature_lowering = self.both_feature_lowering + 1
-            # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
+            # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
 
     return lowering_matrix
 
@@ -143,10 +166,10 @@ class Conv_Layer(object):
       resol_feature = self.Iw_padded*self.Ih_padded*last_channel
       self.ru = tot_nz_feature/resol_feature
 
-    self.density_lowering = self.tot_nz_lowering/resol_lowering
+    self.lowering_density = self.tot_nz_lowering/resol_lowering
 
   def print_all(self):
-    print("\n############ Print Layer object ############\n")
+    # print("\n############ Print Layer object ############\n")
     print(("Feature Map shape rows: %d , cols: %d, channels: %d ")
           %(self.Iw_padded, self.Ih_padded, self.Ic))
     print(("After padding with --> %s Method || Shape rows: %d , cols: %d, channels: %d ")
@@ -156,8 +179,8 @@ class Conv_Layer(object):
     print("Lowering nnz = %d ,feature map nnz = %d"
           %(self.tot_nz_lowering, self.tot_nz_feature))
     print(("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")
-          %(self.ru, self.density_lowering))
+          %(self.ru, self.lowering_density))
     print("Density Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix"
           %(self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count))
-    print("\n############ END ***\/** object ############\n")
+    # print("\n############ END ***\/** object ############\n")
     

@@ -6,6 +6,15 @@ image_dir          = '/media/h2amer/MULTICOM-104/Customized_validation/validatio
 WORKSPACE_DIR      = '/home/h2amer/work/workspace/space_complexity_analysis/'
 MODEL_PATH         =  WORKSPACE_DIR + 'util/frozen_graphs/'
 
+
+conv_methods         = {'CPO'   :      1,
+                        'CPS'   :      2,
+                        'MEC'   :      3,
+                        'CSCC'  :      4,
+                        'Im2Col':      5
+                        }
+
+
 models             = {  'IV1':         1,
                         'IV3':         2,
                         'IV4':         3,
