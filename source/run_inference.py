@@ -348,12 +348,12 @@ def featureMap_stats(feature_maps, layer):
     lowering_matrix = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
 
+    Im2col_space = getSpace(layer, conv_methods['Im2Col'])
+    for method in range(1,len(conv_methods)-1):
+        getSpace(layer, method, Im2col_space)
 
-    for method in range(1,5):
-        getSpace(layer, method)
-
-    for method in range(3,5):
-        getDensity(layer, method)
+    getDensityBound(layer, conv_methods['MEC'])
+    getDensityBound(layer, conv_methods['CSCC'])
 
     return lowering_matrix, layer.tot_nz_feature
 
