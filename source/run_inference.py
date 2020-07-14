@@ -347,25 +347,14 @@ def featureMap_stats(feature_maps, layer):
     feature_maps = layer.image_padding(feature_maps)
     lowering_matrix = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
-    print(getSpaceCPO(layer))
-    print(getDensityBoundLoweringDensityCSCC(layer))
-    for key in conv_methods:
-        if (conv_methods[key] == SparsityMethodTypes.CPO.value):
-            pass 
-        elif (conv_methods[key] == SparsityMethodTypes.CPS.value):
-            pass
-        elif (conv_methods[key] == SparsityMethodTypes.MEC.value):
-            pass
-        elif (conv_methods[key] == SparsityMethodTypes.CSCC.value):
-            pass
-
-    # density_bound_mec, density_bound_cscc = cal_densityBound(layer)
-
-    # assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value)
 
 
-    # print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
-    # print('\n-------------\n')
+    for method in range(1,5):
+        getSpace(layer, method)
+
+    for method in range(3,5):
+        getDensity(layer, method)
+
     return lowering_matrix, layer.tot_nz_feature
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
@@ -388,25 +377,22 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     else:
         predictions = sess.run(softmax_tensor, {input_tensor_name: sess.run(image_data)})
 
-    # count_Kw_Kh = 0
-    # for layer in all_layers:
-    #     if (layer.Kw == 1 and layer.Kh == 1):
-    #         count_Kw_Kh = count_Kw_Kh + 1
-    # print("kw = 1 , kh = 1 counts", count_Kw_Kh)
+    count_Kw_Kh = 0
+    for layer in all_layers:
+        if (layer.Kw == 1 and layer.Kh == 1):
+            count_Kw_Kh = count_Kw_Kh + 1
+    print("kw = 1 , kh = 1 counts", count_Kw_Kh)
+    
     # for layer in all_layers:
     print(np.shape(all_layers))
     layer = all_layers[3]
-    # print(layer)
-    current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
-    current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
-    # print(current_feature_map.shape)
-    current_feature_map = np.squeeze(current_feature_map)
-    # lowering_matrix, tot_nz_feature = feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
+    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+    current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+    current_feature_map             = np.squeeze(current_feature_map)
     lowering_matrix, tot_nz_feature = featureMap_stats(current_feature_map, layer)
-    print(layer.SparsityMethodTypes.CPO.cmpRatio)
-    print('here',layer.SparsityMethodTypes.getMethodByName('CPO'))
-    CPO = overlap_cal(lowering_matrix, layer.Kw, layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
+    CPO                             = overlap_cal(lowering_matrix, layer.Kw, layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
     print(layer)
+    
     exit(0)
 
     #relu_conv_tensor = sess.graph.get_tensor_by_name('mixed_' + str(layerID) + '/join:0')
@@ -726,10 +712,5 @@ if __name__ == '__main__':
   )
 
     FLAGS, unparsed = parser.parse_known_args()
-    print("\n############ Here WTF ############\n")
-    print(FLAGS.model_name)
-    print(SparsityMethodTypes.getModelByValue(1))
-    print(SparsityMethodTypes.getModelByName('CPO'))
-    print("\n############ END  WTF ############\n")
 
 tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)  

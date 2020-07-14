@@ -14,21 +14,6 @@ import enum
 
 class Conv_Layer(object):
 
-  class SparsityMethodTypes(enum.Enum):   
-    # This class desribes the possible method types for convolution (CPO, CPS, MEC, CSCC, Im2Col)
-    CPO              = 1
-    CPS              = 2
-    MEC              = 3
-    CSCC             = 4
-    Im2Col           = 5
-
-    def getMethodByValue(val):
-        return SparsityMethodTypes(val).name
-
-    
-    def getMethodByName(val):
-        return SparsityMethodTypes[val].value, SparsityMethodTypes[val].cmpRatio
-
   """A simple class for handling conv selfs."""
   def __init__(self, input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In=1, padding="VALID"):
     self.input_tensor_name                          =  input_tensor_name
@@ -46,20 +31,20 @@ class Conv_Layer(object):
     self.In                                         =  int(In)
     self.padding                                    =  padding
     # Save All the Compression Ratioes per Image in an single array
-    self.SparsityMethodTypes.CPO.cmpRatio           = np.empty(0, float)
-    self.SparsityMethodTypes.CPS.cmpRatio           = np.empty(0, float)
-    self.SparsityMethodTypes.MEC.cmpRatio           = np.empty(0, float)
-    self.SparsityMethodTypes.CSCC.cmpRatio          = np.empty(0, float)
+    self.CPO_cmpRatio                               =  np.empty(0, float)
+    self.CPS_cmpRatio                               =  np.empty(0, float)
+    self.MEC_cmpRatio                               =  np.empty(0, float)
+    self.CSCC_cmpRatio                              =  np.empty(0, float)
     # Save All the densities Bounds
-    self.density_bound_mec  = 0
+    self.density_bound_mec                          =  0
     # for different densities thats why we need a vector
-    self.density_bound_cscc = np.empty(0, float) 
+    self.density_bound_cscc                         =  np.empty(0, float) 
     # Save All the densities per Image in an single array
-    self.ru_all             = np.empty(0, float)
-    self.lowering_den_all   = np.empty(0, float)
+    self.ru_all                                     =  np.empty(0, float)
+    self.lowering_den_all                           =  np.empty(0, float)
     # Save All the densities per channel per Image 2D
-    self.lowering_density_channel_all  = np.empty((0,self.Ic), float)
-    self.feature_desity_channel_all    = np.empty((0,self.Ic), float)
+    # self.lowering_density_channel_all               =  np.empty((0,self.Ic), float)
+    # self.feature_desity_channel_all                 =  np.empty((0,self.Ic), float)
   def __str__(self):
       try:
         s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
