@@ -45,8 +45,55 @@ def create_graph():
         graph_def.ParseFromString(f.read())
         tf.import_graph_def(graph_def, name='')
 
-
 def get_DNN_info(sess):
+
+    graph_def = sess.graph.as_graph_def(add_shapes=True)
+
+    all_tensors = [tensor for op in tf.get_default_graph().get_operations() for tensor in op.values()]
+    all_layers  = []
+    
+    # loop on all nodes in the graph
+    for  nid, n in enumerate(graph_def.node):
+        try:
+            
+            #print(n.name)
+            if 'Conv2D' in n.name:
+
+                output_tensor_name = n.name + ':0'
+
+                input_tensor_name = n.input[0] + ':0'
+                input_tensor      = sess.graph.get_tensor_by_name(input_tensor_name)
+                Ih                = input_tensor.shape[1]
+                Iw                = input_tensor.shape[2]
+                Ic                = input_tensor.shape[3]
+
+                conv_tensor_params_name = n.input[1] + ':0'
+                conv_tensor_params      = sess.graph.get_tensor_by_name(conv_tensor_params_name)
+                filter_shape            = conv_tensor_params.shape
+                Kh                      = filter_shape[0]
+                Kw                      = filter_shape[1]
+                K                       = filter_shape[3]
+               
+                Oh = n.attr['_output_shapes'].list.shape[0].dim[1].size
+                Ow = n.attr['_output_shapes'].list.shape[0].dim[2].size
+
+                if 'padding' in n.attr.keys():
+                    padding_type = n.attr['padding'].s.decode(encoding='utf-8')
+                if 'strides' in n.attr.keys():
+                    art_tensor_name = n.name + ':0'
+                    strides_list = [int(a) for a in n.attr['strides'].list.i]
+                    Sh           = strides_list[1]
+                    Sw           = strides_list[2]
+                
+                # Create the conv layer
+                conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In=1, padding=padding_type)
+                all_layers.append(conv_layer)
+        except ValueError:
+            print('%s is an Op.' % n.name)
+
+    return all_layers
+    
+def get_DNN_info_pld(sess):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
 
