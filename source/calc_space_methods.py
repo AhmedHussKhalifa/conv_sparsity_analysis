@@ -86,7 +86,7 @@ def getDensityBoundLoweringDensityCSCC(layer):
         print("WARNING: CSCC (Winner) Lowering denisty is lower than the bound")
     return density_bound_lowering_density
 
-def getSpace(layer, method_type, Im2col_space, is_for_density_calc=False):
+def getCR(layer, method_type, Im2col_space = 1, is_for_density_calc=False):
     if (method_type == conv_methods['CPO']):
         layer.CPO_cmpRatio = np.append(layer.CPO_cmpRatio, 
             getSpaceCPO(layer, is_for_density_calc)/Im2col_space)
@@ -99,6 +99,8 @@ def getSpace(layer, method_type, Im2col_space, is_for_density_calc=False):
     elif (method_type == conv_methods['CSCC']):
         layer.CSCC_cmpRatio = np.append(layer.CSCC_cmpRatio, 
             getSpaceCSCC(layer, is_for_density_calc)/Im2col_space)
+    elif (method_type == conv_methods['Im2Col']):
+        return getSpaceIm2Col(layer, is_for_density_calc)
 
 def getDensityBound(layer, method_type):
     if (method_type == conv_methods['MEC']):

@@ -348,9 +348,9 @@ def featureMap_stats(feature_maps, layer):
     lowering_matrix = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
 
-    Im2col_space = getSpace(layer, conv_methods['Im2Col'])
+    Im2col_space = getCR(layer, conv_methods['Im2Col'])
     for method in range(1,len(conv_methods)-1):
-        getSpace(layer, method, Im2col_space)
+        getCR(layer, method, Im2col_space)
 
     getDensityBound(layer, conv_methods['MEC'])
     getDensityBound(layer, conv_methods['CSCC'])
