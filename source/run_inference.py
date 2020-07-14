@@ -554,7 +554,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     current_feature_map = np.squeeze(current_feature_map)
     lowering_matrix, tot_nz_feature = feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
     CPO = overlap_cal(lowering_matrix, layer.Kw  ,layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
-    exit(0)
+    #exit(0)
 
     #relu_conv_tensor = sess.graph.get_tensor_by_name('mixed_' + str(layerID) + '/join:0')
 
@@ -825,7 +825,6 @@ def main(_):
 
     elapsedTime = end - start
 
-    print('Done in %s' % PATH_TO_EXCEL)
 
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser()  
