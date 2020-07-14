@@ -105,10 +105,8 @@ def get_DNN_info(sess):
                     all_layers[layer_count].padding_cal()
                     layer_count = layer_count + 1
                     #print (n.name, ' Strides: ' , [int(a) for a in n.attr['strides'].list.i])
-
         except ValueError:
             print('%s is an Op.' % n.name)
-   
     return all_layers
 
 # ---- 
@@ -413,7 +411,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # print("kw = 1 , kh = 1 counts", count_Kw_Kh)
     # for layer in all_layers:
     print(np.shape(all_layers))
-    layer = all_layers[4]
+    layer = all_layers[3]
     print(layer)
     current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
