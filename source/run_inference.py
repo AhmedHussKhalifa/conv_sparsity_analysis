@@ -285,7 +285,7 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     sw = int(sw)
     sh = int(sh)
 
-    print('Patterns Calculations')
+    print('\nPatterns Calculations\n')
     tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
     # SET CAL
     if (kw%sw)==0:
@@ -342,11 +342,47 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     print('\n-------------\n')
     return pattern_set_perc
 
+def patterns_cal(feature_maps, tot_nz_feature, pattern_width = 4):
+    patterns = np.zeros(pattern_width)
+    nnz_pattern = 0
+    for channel in range(0,feature_maps.shape[2]):
+        x = feature_maps[:, :, channel]
+        for i in range(0,feature_maps.shape[1]):
+            for j in range(0, (math.floor(feature_maps.shape[0]/pattern_width)*pattern_width), pattern_width):
+                catched_pattern = feature_maps[range(j,j+pattern_width),i,channel]
+                pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+                nnz_pattern = nnz_pattern + pattern_seq
+                if (pattern_seq>0.0):
+                    patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1            
+            remain = range((math.floor(feature_maps.shape[0]/pattern_width)*pattern_width) 
+                            ,(feature_maps.shape[0]))
+            catched_pattern = feature_maps[remain, i , channel]
+            pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+            nnz_pattern = nnz_pattern + pattern_seq
+            if ((pattern_seq > 0.0) & (pattern_seq == 3.0)):
+                patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1
+            elif ((pattern_seq > 0.0) & (pattern_seq <= 2.0)):
+                patterns[0] = patterns[0] + pattern_seq
+    
+    for idx in range(0,patterns.shape[0]):
+        print(("Pattern %d counts --> %d")%((idx+1),patterns[idx]))
+
+    # Check 
+
+    tot_pattern =  patterns[0] + 2*patterns[1] + 3*patterns[2] + 4*patterns[3]
+    if (tot_pattern!=tot_nz_feature):
+        print("Total Number of NNZ elements from the patterns: %d"%nnz_pattern)
+        print("Total Number of Non-Zero of the feature : %d"%tot_nz_feature)
+        print("ERROR: missing some patterns")
+        exit(0)    
+    return patterns
+
 def featureMap_stats(feature_maps, layer):
 
     feature_maps = layer.image_padding(feature_maps)
     lowering_matrix = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
+    
 
     Im2col_space = getCR(layer, conv_methods['Im2Col'])
     for method in range(1,len(conv_methods)-1):
@@ -382,15 +418,16 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
         if (layer.Kw == 1 and layer.Kh == 1):
             count_Kw_Kh = count_Kw_Kh + 1
     print("kw = 1 , kh = 1 counts", count_Kw_Kh)
-    
+    pattern_width = 4
     # for layer in all_layers:
     print(np.shape(all_layers))
-    layer = all_layers[3]
+    layer = all_layers[40]
     current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
     current_feature_map             = np.squeeze(current_feature_map)
     lowering_matrix, tot_nz_feature = featureMap_stats(current_feature_map, layer)
     CPO                             = overlap_cal(lowering_matrix, layer.Kw, layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
+    CPS_patterns                    = patterns_cal(current_feature_map, layer.tot_nz_feature, pattern_width)
     print(layer)
     
     exit(0)

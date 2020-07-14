@@ -47,7 +47,7 @@ class Conv_Layer(object):
     # self.feature_desity_channel_all                 =  np.empty((0,self.Ic), float)
   def __str__(self):
       try:
-        s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+        s = ('\n=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
                 \nSh: %d, Sw: %d \
                 \nOh: %d, Ow: %d \
