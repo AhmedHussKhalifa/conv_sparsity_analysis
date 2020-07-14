@@ -94,68 +94,6 @@ def get_DNN_info(sess):
 
     return all_layers
     
-def get_DNN_info_old(sess):
-
-    graph_def = sess.graph.as_graph_def(add_shapes=True)
-
-    all_tensors = [tensor for op in tf.get_default_graph().get_operations() for tensor in op.values()]
-    all_layers  = []
-    for itensor, tensor in enumerate(all_tensors):
-        #print(tensor)
-        if 'conv2d_params' in tensor.name:
-            filter_shape = tensor.shape
-            Kh           = filter_shape[0]
-            Kw           = filter_shape[1]
-            K            = filter_shape[3]
-            
-            input_tensor = all_tensors[itensor-1]
-            input_tensor_name = input_tensor.name
-            Ih = input_tensor.shape[1]
-            Iw = input_tensor.shape[2]
-            Ic = input_tensor.shape[3]
-
-        if 'Conv2D' in tensor.name:
-            output_shape = tensor.shape
-            Oh           = output_shape[1]
-            Ow           = output_shape[2]
-            output_tensor_name = tensor.name
-            
-            Sh = -1
-            Sw = -1
-            
-            conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic)
-            all_layers.append(conv_layer)
-
-            #print(conv_layer, ' Layer Count: ', len(all_layers), conv_layer.output_tensor_name)
-    
-    #print('\n\n\nDNN Law Yoom ye3ady')
-
-    layer_count = 0
-
-    for  nid, n in enumerate(graph_def.node):
-        try:
-            
-            #print(n.name)
-            if 'Conv2D' in n.name:
-                if 'padding' in n.attr.keys():
-                    padding_type = n.attr['padding'].s.decode(encoding='utf-8')
-                    all_layers[layer_count].padding = padding_type
-                if 'strides' in n.attr.keys():
-                    art_tensor_name = n.name + ':0'
-                    strides_list = [int(a) for a in n.attr['strides'].list.i]
-                    Sh           = strides_list[1]
-                    Sw           = strides_list[2]
-                    
-                    # Update the stride information
-                    #print('Layer Count: ', layer_count, n.name)
-                    all_layers[layer_count].Sh = Sh
-                    all_layers[layer_count].Sw = Sw
-                    layer_count = layer_count + 1
-                    #print (n.name, ' Strides: ' , [int(a) for a in n.attr['strides'].list.i])
-        except ValueError:
-            print('%s is an Op.' % n.name)
-    return all_layers
-
 # ---- 
 
 def print_tensors(sess):
@@ -413,15 +351,14 @@ def featureMap_stats(feature_maps, layer):
     print(getDensityBoundLoweringDensityCSCC(layer))
     for key in conv_methods:
         if (conv_methods[key] == SparsityMethodTypes.CPO.value):
-            pass
+            pass 
         elif (conv_methods[key] == SparsityMethodTypes.CPS.value):
             pass
         elif (conv_methods[key] == SparsityMethodTypes.MEC.value):
             pass
         elif (conv_methods[key] == SparsityMethodTypes.CSCC.value):
             pass
-        elif (conv_methods[key] == SparsityMethodTypes.Im2Col.value):
-            pass
+
     # density_bound_mec, density_bound_cscc = cal_densityBound(layer)
 
     # assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value)
@@ -459,13 +396,15 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # for layer in all_layers:
     print(np.shape(all_layers))
     layer = all_layers[3]
-    print(layer)
+    # print(layer)
     current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
     # print(current_feature_map.shape)
     current_feature_map = np.squeeze(current_feature_map)
     # lowering_matrix, tot_nz_feature = feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
     lowering_matrix, tot_nz_feature = featureMap_stats(current_feature_map, layer)
+    print(layer.SparsityMethodTypes.CPO.cmpRatio)
+    print('here',layer.SparsityMethodTypes.getMethodByName('CPO'))
     CPO = overlap_cal(lowering_matrix, layer.Kw, layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
     print(layer)
     exit(0)

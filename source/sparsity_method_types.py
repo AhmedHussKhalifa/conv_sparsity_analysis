@@ -1,5 +1,6 @@
 import enum
 
+
 # Usage: print(conv_methods['CPO'])
 class SparsityMethodTypes(enum.Enum):   
     # This class desribes the possible method types for convolution (CPO, CPS, MEC, CSCC, Im2Col)

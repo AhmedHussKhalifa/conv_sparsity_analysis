@@ -14,6 +14,7 @@ def getSpaceCPO(layer, is_for_density_calc=True):
         # use the assumption of Ic = 1 && In = 1
         space = (layer.Ow*layer.Kw)/layer.Sw + (layer.Kw/layer.Sw) + layer.Ow + 1 + 2*(layer.ru*layer.Ih*layer.Iw)
     else:
+        # Used to caluclate the Compression Ratio
         # we should multiply by Ic here, create seperate functions for this
         if (layer.Kw%layer.Sw) == 0:
             space = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic) 
