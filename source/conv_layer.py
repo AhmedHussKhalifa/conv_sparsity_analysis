@@ -94,9 +94,9 @@ class Conv_Layer(object):
           print("ERROR in padding in dimensions")
           # exit(0)
 
-      paddings = [[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]]
-      paddings = tf.convert_to_tensor(paddings, dtype=tf.int32)
-      self.paddings = paddings.eval(session=tf.compat.v1.Session())
+      self.paddings = [[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]]
+      self.paddings = tf.convert_to_tensor(self.paddings, dtype=tf.int32)
+      self.paddings = self.paddings.eval(session=tf.compat.v1.Session())
        
   # Here we should add the padding, lowering matrix reps, etc
   

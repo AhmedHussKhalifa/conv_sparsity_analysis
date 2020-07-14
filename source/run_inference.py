@@ -87,13 +87,14 @@ def get_DNN_info(sess):
                 
                 # Create the conv layer
                 conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In=1, padding=padding_type)
+                conv_layer.padding_cal()
                 all_layers.append(conv_layer)
         except ValueError:
             print('%s is an Op.' % n.name)
 
     return all_layers
     
-def get_DNN_info_pld(sess):
+def get_DNN_info_old(sess):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
 
@@ -149,7 +150,6 @@ def get_DNN_info_pld(sess):
                     #print('Layer Count: ', layer_count, n.name)
                     all_layers[layer_count].Sh = Sh
                     all_layers[layer_count].Sw = Sw
-                    all_layers[layer_count].padding_cal()
                     layer_count = layer_count + 1
                     #print (n.name, ' Strides: ' , [int(a) for a in n.attr['strides'].list.i])
         except ValueError:
