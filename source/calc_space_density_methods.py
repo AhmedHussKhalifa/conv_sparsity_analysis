@@ -67,7 +67,7 @@ def getDensityBoundCSCC(layer):
 
     if not layer.Kw % layer.Sw:
         density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih_padded*layer.Ic) \
-                - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih_padded*layer.sw)
+                - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih_padded*layer.Sw)
     else:
         density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih_padded*layer.Ic) \
                 - math.ceil(layer.Kw/layer.sw)*layer.In*(layer.Ow+1)/(2*layer.Ic*layer.Ih_padded)
