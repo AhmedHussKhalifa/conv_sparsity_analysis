@@ -705,8 +705,7 @@ if __name__ == '__main__':
       default='IV3',  
       help='model name'  
   )
-
-  parser.add_argument(
+    parser.add_argument(
       '--gen_dir',
       type=str,
       default='../gen/',
