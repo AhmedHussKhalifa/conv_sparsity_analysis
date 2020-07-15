@@ -46,6 +46,7 @@ class Conv_Layer(object):
     # for different densities thats why we need a vector
     # self.density_bound_cscc                         =  np.empty(0, float) 
     self.density_bound_cscc                         =  0
+    self.ru                                         = 0
     # Save All the densities per Image in an single array
     self.ru_batch                                   =  np.empty(0, float)
     self.lowering_den_batch                         =  np.empty(0, float)
