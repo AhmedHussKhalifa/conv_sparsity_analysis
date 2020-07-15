@@ -98,7 +98,32 @@ def get_DNN_info(sess):
             print('%s is an Op.' % n.name)
 
     return all_layers
+
+
+def get_DNN_moules(all_layers):
+    mixed_map = np.empty((11,0,),int)
+    tmp = np.empty(0,int)
+    for ilayer in range(len(all_layers)):
+        if "mixed" not in all_layers[ilayer].output_tensor_name:
+                tmp = np.append(tmp, ilayer, axis = 0)
+
+    mixed_map = np.append(mixed_map, tmp, axis = 1)
+    tmp = np.empty(0,int)
+    for ilayer in range(len(all_layers)):
+        if "mixed" in all_layers[ilayer].output_tensor_name:
+                tmp = np.append(tmp, ilayer, axis = 0)
     
+    mixed_map = np.append(mixed_map, tmp, axis = 1)           
+    
+    for mixed_count in range(1,11):
+        tmp = np.empty(0,int)
+        for ilayer in range(len(all_layers)):
+            if (("mixed_%d")%mixed_count) in all_layers[ilayer].output_tensor_name:
+                tmp = np.append(tmp, ilayer, axis = 0)
+        mixed_map = np.append(mixed_map, tmp, axis = 1)
+
+    return mixed_map
+
 # ---- 
 
 def print_tensors(sess):
