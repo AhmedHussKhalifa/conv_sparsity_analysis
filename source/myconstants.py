@@ -7,12 +7,12 @@ WORKSPACE_DIR      = '/home/h2amer/work/workspace/space_complexity_analysis/'
 MODEL_PATH         =  WORKSPACE_DIR + 'util/frozen_graphs/'
 
 
-conv_methods         = {'CPO'   :      1,
-                        'CPS'   :      2,
-                        'MEC'   :      3,
-                        'CSCC'  :      4,
-                        'SparseTensor', 5,
-                        'Im2Col':      6
+conv_methods         = {'CPO'   :        1,
+                        'CPS'   :        2,
+                        'MEC'   :        3,
+                        'CSCC'  :        4,
+                        'SparseTensor':  5,
+                        'Im2Col':        6
                         }
 
 
