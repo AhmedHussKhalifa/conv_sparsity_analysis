@@ -331,11 +331,11 @@ def Methods_stats(feature_maps, layer):
     lowering_matrix     = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
     
+
+    # CALLED AFTER ALL IMAGE based through all layers
     Im2col_space        = getCR(layer, conv_methods['Im2Col'])
-    
     for method in range(1,len(conv_methods)-1):
         getCR(layer, method, Im2col_space)
-
     layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
     getDensityBound(layer, conv_methods['CSCC'])
 
