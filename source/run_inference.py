@@ -586,7 +586,7 @@ def ensure_model_name(x):
 
 ############################################################
 # Note this code does nort work for IV4 since its output tensor only takes batch size 1 
-# python3-tf run_inference.py --select Org --model_name IV3 --END 1
+# python3-tf run_inference.py --select Org --model_name IV3 --END 2
 def main(_):
 
     model_path      =  WORKSPACE_DIR + FLAGS.model_name
