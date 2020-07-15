@@ -87,6 +87,8 @@ def getCR(layer, method_type, Im2col_space = 1):
         layer.MEC_cmpRatio = np.append(layer.MEC_cmpRatio, getSpaceMEC(layer)/Im2col_space)
     elif (method_type == conv_methods['CSCC']):
         layer.CSCC_cmpRatio = np.append(layer.CSCC_cmpRatio, getSpaceCSCC(layer)/Im2col_space)
+    elif (method_type == conv_methods['SparseTensor']):
+        layer.SparseTen_cmpRatio   = np.append(layer.SparseTen_cmpRatio, getSpaceSparseTensor(layer)/Im2col_space)
     elif (method_type == conv_methods['Im2Col']):
         return getSpaceIm2Col(layer)
 
