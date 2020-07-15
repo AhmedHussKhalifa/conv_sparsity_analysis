@@ -40,6 +40,7 @@ np.set_printoptions(threshold=sys.maxsize)
 from myconstants import *
 
 # Import process
+import multiprocessing
 from multiprocessing import Process
 
 
@@ -325,21 +326,38 @@ def patterns_cal(feature_maps, layer):
 
 
 
-def compute_info_all_layers(all_layers):
-    for ilayer, layer in enumerate(all_layers):
-        print('*********Layer %d' % ilayer)
-        current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
-        current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
-        current_feature_map             = np.squeeze(current_feature_map)
-        lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
-        layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
-        CPO                             = overlap_cal(lowering_matrix, layer)
-        Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
-        for method in range(1,len(conv_methods)):
-                getCR(layer, method, Im2col_space)
-        layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
-        getDensityBound(layer, conv_methods['CSCC'])
+#def compute_info_all_layers(all_layers):
+#    for ilayer, layer in enumerate(all_layers):
+#        print('*********Layer %d' % ilayer)
+#        current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+#        current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+#        current_feature_map             = np.squeeze(current_feature_map)
+#        lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+#        layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
+#        CPO                             = overlap_cal(lowering_matrix, layer)
+#        Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
+#        for method in range(1,len(conv_methods)):
+#                getCR(layer, method, Im2col_space)
+#        layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
+#        getDensityBound(layer, conv_methods['CSCC'])
 
+
+def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data):
+    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+    current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+    current_feature_map             = np.squeeze(current_feature_map)
+    lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+    layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
+    CPO                             = overlap_cal(lowering_matrix, layer)
+    Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
+    for method in range(1,len(conv_methods)):
+        getCR(layer, method, Im2col_space)
+    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
+    getDensityBound(layer, conv_methods['CSCC'])
+    
+    # append the results
+    #results[ilayer] = layer
+    return layer
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_layers):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
@@ -355,15 +373,24 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     else:
         predictions = sess.run(softmax_tensor, {input_tensor_name: sess.run(image_data)})
 
-    p1 = Process(target=compute_info_all_layers, args=(all_layers))
-    p1.start()
-    p1.join()
+    #p_list = []
+    manager = multiprocessing.Manager()
+    results = manager.dict()
+    #running_tasks = [Process(target=compute_info_all_layers, args=(ilayer, layer, results, sess, input_tensor_name, image_data, current_feature_map)) for ilayer, layer in enumerate(all_layers)]
+    #print(running_tasks)
+    #print('Starting...')
+    #running_tasks[0].start()
 
-    print('P1 joined')
-    for layer in all_layers:
-        print(layer)
-    exit(0)
+    #print('Joing...')
+    #running_tasks[0].join()
+    #print('Done join')
+    #print(results[0])
     
+    for ilayer in range(len(all_layers)):
+        print('Layer %d' % ilayer)
+        layer              = all_layers[ilayer]
+        all_layers[ilayer] = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+        print(all_layers[ilayer])
 
     return 1
 
