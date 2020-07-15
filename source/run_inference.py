@@ -259,8 +259,8 @@ def overlap_cal(lowering_matrix, layer):
     
     pattern_set_perc = 100*pattern_set/layer.tot_nz_feature
     
-    for pattern_idx in range(0,np.size(pattern_set)):
-        print(("Counts of Set #%d --> %f ")%(pattern_idx+1,pattern_set_perc[pattern_idx]))
+    # for pattern_idx in range(0,np.size(pattern_set)):
+    #     print(("Counts of Set #%d --> %f ")%(pattern_idx+1,pattern_set_perc[pattern_idx]))
 
     # Checks 
     tot_pattern = 0
@@ -268,8 +268,8 @@ def overlap_cal(lowering_matrix, layer):
         tot_pattern = tot_pattern + (pattern_idx+1)*pattern_set[pattern_idx]
 
 
-    print("Total Number of Non-Zero after creating the patterns: %d"%tot_pattern)
-    print("Total Number of Non-Zero of the lowering matrix: %d"%layer.tot_nz_lowering)
+    # print("Total Number of Non-Zero after creating the patterns: %d"%tot_pattern)
+    # print("Total Number of Non-Zero of the lowering matrix: %d"%layer.tot_nz_lowering)
     if (tot_pattern!=layer.tot_nz_lowering):
         print("ERROR: missing some patterns")
         exit(0)
@@ -298,8 +298,8 @@ def patterns_cal(feature_maps, layer):
             elif ((pattern_seq > 0.0) & (pattern_seq <= 2.0)):
                 patterns[0] = patterns[0] + pattern_seq
     
-    for idx in range(0,patterns.shape[0]):
-        print(("Pattern %d counts --> %d")%((idx+1),patterns[idx]))
+    # for idx in range(0,patterns.shape[0]):
+    #     print(("Pattern %d counts --> %d")%((idx+1),patterns[idx]))
     
     # layer.patterns= np.append(layer.patterns,patterns) 
     

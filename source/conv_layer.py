@@ -179,8 +179,8 @@ class Conv_Layer(object):
     resol_lowering = self.lowering_shape[0]*self.lowering_shape[1]
     resol_lowering_ = self.Ow*self.Ih*self.Kw*self.Ic
     # CHECK
-    if (resol_lowering != resol_lowering_):
-      print("ERROR in the shape of the in Lowering Matrix")
+    # if (resol_lowering != resol_lowering_):
+    #   print("ERROR in the shape of the in Lowering Matrix")
     self.tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
     
     # Here if you want to select a specific end for your calc 
