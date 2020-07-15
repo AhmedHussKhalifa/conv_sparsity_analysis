@@ -473,9 +473,6 @@ def readImageBatch(startBatch, endBatch, qf_list):
             current_jpeg_image      = org_image_dir + '/shard-' + str(shard_num) + '/' +  str(folder_num) + '/' + 'ILSVRC2012_val_' + imgID + '.JPEG'
             #current_jpeg_image      = '/home/h2amer/work/workspace/ML_TS/training_original/shard-9/944/n02834397_3465.JPEG'
             image_data              = readImage(current_jpeg_image)
-            
-            # Print the path to image
-            print(current_jpeg_image)
 
             if models[FLAGS.model_name] == Models.inceptionresnetv2.value:
                 img_batch               = image_data
@@ -545,6 +542,8 @@ def readAndPredictOptimizedImageByImage():
                 qf         = 110
                 current_jpeg_image      = org_image_dir + '/shard-' +str(shard_num) + '/' +  str(folder_num) + '/' + 'ILSVRC2012_val_' + imgID + '.JPEG'
                 
+                # Print the path to image
+                print('\t\t\t\t\t%s' % current_jpeg_image)
                 if (FLAGS.model_name == Models.inceptionresnetv2.value):
                     image_data = tf.read_file(current_jpeg_image)
                     image_data = tf.image.decode_jpeg(image_data, channels=3)
