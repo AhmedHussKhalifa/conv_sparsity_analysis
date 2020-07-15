@@ -48,7 +48,7 @@ def getSpaceIm2Col(layer):
 
 # Calculates the required memory units for the **SparseTensor** method
 def getSpaceSparseTensor(layer):
-    space = 2*layer.tot_nz_lowering
+    space = 2*layer.tot_nz_feature
     return space
 
 # Calculates the required density bound for MEC vs CPO
