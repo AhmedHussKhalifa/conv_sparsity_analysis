@@ -359,35 +359,10 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     p1.start()
     p1.join()
 
-<<<<<<< HEAD
-    for ilayer, layer in enumerate(all_layers):
-        print('*********Layer %d' % ilayer)
-        current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
-        current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
-        current_feature_map             = np.squeeze(current_feature_map)
-        lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
-        layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
-        CPO                             = overlap_cal(lowering_matrix, layer)
-
-    # CALLED AFTER IMAGE passed through all layers
-    Im2col_space        = getCR(layer, conv_methods['Im2Col'])
-    for method in range(1,len(conv_methods)-1):
-        getCR(layer, method, Im2col_space)
-    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
-    getDensityBound(layer, conv_methods['CSCC'])
-=======
     print('P1 joined')
     for layer in all_layers:
         print(layer)
     exit(0)
-    # CALLED AFTER ALL IMAGE based through all layers
-#    Im2col_space        = getCR(layer, conv_methods['Im2Col'])
-#    for method in range(1,len(conv_methods)-1):
-#        getCR(layer, method, Im2col_space)
-#    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
-#    getDensityBound(layer, conv_methods['CSCC'])
->>>>>>> c4f34dc5a208e6c2dbec2a7ec33ae64d60443e50
-    
 
     return 1
 
