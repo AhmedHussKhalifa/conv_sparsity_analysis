@@ -31,15 +31,21 @@ class Conv_Layer(object):
     self.In                                         =  int(In)
     self.padding                                    =  padding
     # Save All the Compression Ratioes per Image in an single array
-    self.CPO_cmpRatio                               =  np.empty(0, float)
-    self.CPS_cmpRatio                               =  np.empty(0, float)
-    self.MEC_cmpRatio                               =  np.empty(0, float)
-    self.CSCC_cmpRatio                              =  np.empty(0, float)
-    self.SparseTen_cmpRatio                         =  np.empty(0, float)
+    # self.CPO_cmpRatio                               =  np.empty(0, float)
+    # self.CPS_cmpRatio                               =  np.empty(0, float)
+    # self.MEC_cmpRatio                               =  np.empty(0, float)
+    # self.CSCC_cmpRatio                              =  np.empty(0, float)
+    # self.SparseTen_cmpRatio                         =  np.empty(0, float)
+    self.CPO_cmpRatio                               =  0
+    self.CPS_cmpRatio                               =  0
+    self.MEC_cmpRatio                               =  0
+    self.CSCC_cmpRatio                              =  0
+    self.SparseTen_cmpRatio                         =  0
     # Save All the densities Bounds
     self.density_bound_mec                          =  0
     # for different densities thats why we need a vector
-    self.density_bound_cscc                         =  np.empty(0, float) 
+    # self.density_bound_cscc                         =  np.empty(0, float) 
+    self.density_bound_cscc                         =  0
     # Save All the densities per Image in an single array
     self.ru_batch                                   =  np.empty(0, float)
     self.lowering_den_batch                         =  np.empty(0, float)
