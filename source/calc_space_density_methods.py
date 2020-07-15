@@ -41,7 +41,7 @@ def getSpaceMEC(layer):
 # Calculates the required memory units for the **CSCC** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCSCC(layer): 
-    space = layer.In*(layer.Ow + 1) + (2*layer.lowering_density*layer.Ow*layer.Ih*layer.Kw)
+    space = layer.In*(layer.Ow + 1) + (2*sum(layer.lowering_den_batch)*layer.Ow*layer.Ih*layer.Kw)
     return space
 
 # Calculates the required memory units for the **Im2Col** method
@@ -76,21 +76,21 @@ def getDensityBoundCSCC(layer):
     return density_bound_cscc
 
 
-def getCR(layer, method_type, Im2col_space = 1, is_for_density_calc=False):
+def getCR(layer, method_type, Im2col_space = 1):
     if (method_type == conv_methods['CPO']):
         layer.CPO_cmpRatio = np.append(layer.CPO_cmpRatio, 
-            getSpaceCPO(layer, is_for_density_calc)/Im2col_space)
+            getSpaceCPO(layer)/Im2col_space)
     elif (method_type == conv_methods['CPS']):
         layer.CPS_cmpRatio = np.append(layer.CPS_cmpRatio, 
-            getSpaceCPS(layer, is_for_density_calc)/Im2col_space)
+            getSpaceCPS(layer)/Im2col_space)
     elif (method_type == conv_methods['MEC']):
         layer.MEC_cmpRatio = np.append(layer.MEC_cmpRatio, 
-            getSpaceMEC(layer, is_for_density_calc)/Im2col_space)
+            getSpaceMEC(layer)/Im2col_space)
     elif (method_type == conv_methods['CSCC']):
         layer.CSCC_cmpRatio = np.append(layer.CSCC_cmpRatio, 
-            getSpaceCSCC(layer, is_for_density_calc)/Im2col_space)
+            getSpaceCSCC(layer)/Im2col_space)
     elif (method_type == conv_methods['Im2Col']):
-        return getSpaceIm2Col(layer, is_for_density_calc)
+        return getSpaceIm2Col(layer)
 
 def getDensityBound(layer, method_type):
     if (method_type == conv_methods['MEC']):

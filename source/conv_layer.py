@@ -45,7 +45,10 @@ class Conv_Layer(object):
     #CPS 
     self.pattern_width                              =  4 # CONST for our approach 
     self.patterns                                   =  np.empty(0, int)
-    seld.patterns_sum                               =  0
+    self.patterns_sum                               =  0
+
+    self.lowering_density_channel                   = np.empty(0, float)
+    self.feature_density_channel                    = np.empty(0, float)
   def __str__(self):
       try:
         s = ('\n=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
@@ -127,13 +130,12 @@ class Conv_Layer(object):
     self.ru             = self.tot_nz_feature/resol_feature
     self.ru_batch       = np.append(self.ru_batch,self.ru)
     
+
     return feature_maps
   
   def lowering_rep(self, feature_maps):
     lowering_matrix                    = np.empty((self.Ow,0), int)
     self.last_channel_cal              = self.Ic
-    self.lowering_density_channel      = np.empty(0, float)
-    self.feature_density_channel       = np.empty(0, float)
     #############################################
     # Not the most important information we need
     self.lower_desity_count     = 0
@@ -170,7 +172,6 @@ class Conv_Layer(object):
         else:
             self.both_feature_lowering = self.both_feature_lowering + 1
             # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
-
     return lowering_matrix
 
   def cal_density(self, lowering_matrix):  
@@ -190,6 +191,7 @@ class Conv_Layer(object):
       self.ru_batch = np.append(self.ru_batch, self.ru)
 
     self.lowering_density = self.tot_nz_lowering/resol_lowering
+    self.lowering_den_batch = np.append(self.lowering_den_batch,self.lowering_density)
 
   def print_all(self):
     # print("\n############ Print Layer object ############\n")
