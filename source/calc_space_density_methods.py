@@ -46,6 +46,7 @@ def getSpaceIm2Col(layer):
     space = layer.In*layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
     return space
 
+# Calculates the required memory units for the **SparseTensor** method
 def getSpaceSparseTensor(layer):
     space = 2*layer.tot_nz_lowering
     return space
