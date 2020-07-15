@@ -337,12 +337,12 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
 
 
     for ilayer, layer in enumerate(all_layers):
-        print('Layer %d' % ilayer)
+        print('*********Layer %d' % ilayer)
         current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
         current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
         current_feature_map             = np.squeeze(current_feature_map)
         lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
-        layer.patterns                  = np.append(layer.patterns,patterns_cal(current_feature_map, layer))
+        layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
         CPO                             = overlap_cal(lowering_matrix, layer)
 
     # CALLED AFTER ALL IMAGE based through all layers
