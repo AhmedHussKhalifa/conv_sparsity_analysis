@@ -193,10 +193,10 @@ class Conv_Layer(object):
     self.lowering_density = self.tot_nz_lowering/resol_lowering
     self.lowering_den_batch = np.append(self.lowering_den_batch,self.lowering_density)
   
-  def preprocessing(self, feature_maps):
-    feature_maps        = layer.image_padding(feature_maps)
-    lowering_matrix     = layer.lowering_rep(feature_maps)
-    layer.cal_density(lowering_matrix)
+  def preprocessing_layer(self, feature_maps):
+    feature_maps        = self.image_padding(feature_maps)
+    lowering_matrix     = self.lowering_rep(feature_maps)
+    self.cal_density(lowering_matrix)
     return lowering_matrix
 
   def print_all(self):
