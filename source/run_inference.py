@@ -289,14 +289,16 @@ def patterns_cal(feature_maps, layer):
         for i in range(0,feature_maps.shape[1]):
             for j in range(0, (math.floor(feature_maps.shape[0]/layer.pattern_width)*layer.pattern_width), layer.pattern_width):
                 catched_pattern = feature_maps[range(j,j+layer.pattern_width),i,channel]
-                pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+                pattern_seq = np.size(catched_pattern[catched_pattern != 0.0])
+                # pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
                 nnz_pattern = nnz_pattern + pattern_seq
                 if (pattern_seq>0.0):
                     patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1            
             remain = range((math.floor(feature_maps.shape[0]/layer.pattern_width)*layer.pattern_width) 
                             ,(feature_maps.shape[0]))
             catched_pattern = feature_maps[remain, i , channel]
-            pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+            pattern_seq = np.size(catched_pattern[catched_pattern != 0.0])
+            # pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
             nnz_pattern = nnz_pattern + pattern_seq
             if ((pattern_seq > 0.0) & (pattern_seq == 3.0)):
                 patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1
@@ -317,7 +319,8 @@ def patterns_cal(feature_maps, layer):
     for p in range(1,len(patterns)):
         layer.patterns_sum = layer.patterns_sum + 2*patterns[p]
 
-    if (tot_pattern != layer.tot_nz_feature):
+    # if (tot_pattern != layer.tot_nz_feature):
+    if (nnz_pattern != layer.tot_nz_feature):
         print("Total Number of NNZ elements from the patterns: %d"%nnz_pattern)
         print("Total Number of Non-Zero of the feature : %d"%layer.tot_nz_feature)
         print("ERROR: missing some patterns")
@@ -388,12 +391,15 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print(results[0])
     
     txt_dir = FLAGS.gen_dir + "CR.txt"
-    CR_txt  = open(txt_dir, "a")
 
     f_name   = FLAGS.gen_dir + "density.txt"
-    den_file = open(f_name, 'a')
 
+    den_file = open(f_name, 'a')
+    CR_txt  = open(txt_dir, 'a')
+    
     for ilayer in range(len(all_layers)):
+    # for ilayer in np.array([24,25,26,27]):
+        # ilayer = 25    
         print('Conv Node %d' % ilayer)
         layer              = all_layers[ilayer]
         layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
@@ -403,9 +409,16 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
         CR_txt.writelines(L)
         den_file.write('%f\t%f\t%f\n' % (layer.ru, layer.density_bound_mec, layer.density_bound_cscc))
 
+        if (idx%5==0):
+            print("IMAGE ID : %d"%idx)
+            den_file.close()
+            CR_txt.close()
+            den_file = open(f_name, 'a')
+            CR_txt  = open(txt_dir, 'a')
+
+
     den_file.close()
     CR_txt.close()
-    
     return 1
 
 def construct_qf_list():
