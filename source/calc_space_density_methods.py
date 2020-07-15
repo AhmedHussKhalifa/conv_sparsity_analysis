@@ -51,6 +51,7 @@ def getSpaceCSCC(layer):
 # Calculates the required memory units for the **Im2Col** method
 def getSpaceIm2Col(layer):
     space = layer.In*layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
+    print("getSpaceIm2Col -->", space)
     return space
 
 # Calculates the required memory units for the **SparseTensor** method
