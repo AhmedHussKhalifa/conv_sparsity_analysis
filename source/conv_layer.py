@@ -66,15 +66,20 @@ class Conv_Layer(object):
                 \nFeature Map shape rows: %d , cols: %d, channels: %d \
                 \nAfter padding Shape rows: %d , cols: %d, channels: %d \
                 \nLowering nnz = %d ,feature map nnz = %d \
-                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix' %
+                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix\n \
+                \n########### Compression Ratios  ###################### \
+                \nCPO_CR : %.3f || CPS_CR : %.3f || MEC_CR : %.3f || CSCC_CR : %.3f || SparseTensor : %.3f \
+                \nMEC Density Bound : %.3f || CSCC Density Bound : %.3f' %
                 (
                 self.input_tensor_name, self.output_tensor_name, \
                 self.In, self.Ic, self.Ih, self.Iw, \
                 self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow, \
-                self.Iw_padded, self.Ih_padded, self.Ic, \
+                self.Iw, self.Ih, self.Ic, \
                 self.Iw_padded, self.Ih_padded, self.Ic, \
                 self.tot_nz_lowering, self.tot_nz_feature, \
-                self.ru, self.lowering_density
+                self.ru, self.lowering_density, \
+                self.CPO_cmpRatio, self.CPS_cmpRatio, self.MEC_cmpRatio, self.CSCC_cmpRatio, self.SparseTen_cmpRatio, \
+                self.density_bound_mec, self.density_bound_cscc
                 )
             )
       except:
