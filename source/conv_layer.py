@@ -31,15 +31,21 @@ class Conv_Layer(object):
     self.In                                         =  int(In)
     self.padding                                    =  padding
     # Save All the Compression Ratioes per Image in an single array
-    self.CPO_cmpRatio                               =  np.empty(0, float)
-    self.CPS_cmpRatio                               =  np.empty(0, float)
-    self.MEC_cmpRatio                               =  np.empty(0, float)
-    self.CSCC_cmpRatio                              =  np.empty(0, float)
-    self.SparseTen_cmpRatio                         =  np.empty(0, float)
+    # self.CPO_cmpRatio                               =  np.empty(0, float)
+    # self.CPS_cmpRatio                               =  np.empty(0, float)
+    # self.MEC_cmpRatio                               =  np.empty(0, float)
+    # self.CSCC_cmpRatio                              =  np.empty(0, float)
+    # self.SparseTen_cmpRatio                         =  np.empty(0, float)
+    self.CPO_cmpRatio                               =  0
+    self.CPS_cmpRatio                               =  0
+    self.MEC_cmpRatio                               =  0
+    self.CSCC_cmpRatio                              =  0
+    self.SparseTen_cmpRatio                         =  0
     # Save All the densities Bounds
     self.density_bound_mec                          =  0
     # for different densities thats why we need a vector
-    self.density_bound_cscc                         =  np.empty(0, float) 
+    # self.density_bound_cscc                         =  np.empty(0, float) 
+    self.density_bound_cscc                         =  0
     # Save All the densities per Image in an single array
     self.ru_batch                                   =  np.empty(0, float)
     self.lowering_den_batch                         =  np.empty(0, float)
@@ -60,15 +66,20 @@ class Conv_Layer(object):
                 \nFeature Map shape rows: %d , cols: %d, channels: %d \
                 \nAfter padding Shape rows: %d , cols: %d, channels: %d \
                 \nLowering nnz = %d ,feature map nnz = %d \
-                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix' %
+                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix\n \
+                \n########### Compression Ratios  ###################### \
+                \nCPO_CR : %.3f || CPS_CR : %.3f || MEC_CR : %.3f || CSCC_CR : %.3f || SparseTensor : %.3f \
+                \nMEC Density Bound : %.3f || CSCC Density Bound : %.3f' %
                 (
                 self.input_tensor_name, self.output_tensor_name, \
                 self.In, self.Ic, self.Ih, self.Iw, \
                 self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow, \
-                self.Iw_padded, self.Ih_padded, self.Ic, \
+                self.Iw, self.Ih, self.Ic, \
                 self.Iw_padded, self.Ih_padded, self.Ic, \
                 self.tot_nz_lowering, self.tot_nz_feature, \
-                self.ru, self.lowering_density
+                self.ru, self.lowering_density, \
+                self.CPO_cmpRatio, self.CPS_cmpRatio, self.MEC_cmpRatio, self.CSCC_cmpRatio, self.SparseTen_cmpRatio, \
+                self.density_bound_mec, self.density_bound_cscc
                 )
             )
       except:
