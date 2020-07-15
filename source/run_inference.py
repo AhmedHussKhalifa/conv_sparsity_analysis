@@ -25,7 +25,7 @@ import argparse
 from model_names import Models
 from code_modes  import CodeMode
 from conv_layer import Conv_Layer
-from calc_space_density_methods import *
+from calc_space_methods import *
 from sparsity_method_types import SparsityMethodTypes
 
 # import imagenet_preprocessing as ipp
