@@ -11,7 +11,8 @@ conv_methods         = {'CPO'   :      1,
                         'CPS'   :      2,
                         'MEC'   :      3,
                         'CSCC'  :      4,
-                        'Im2Col':      5
+                        'SparseTensor', 5,
+                        'Im2Col':      6
                         }
 
 

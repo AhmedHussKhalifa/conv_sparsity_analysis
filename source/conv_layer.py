@@ -35,6 +35,7 @@ class Conv_Layer(object):
     self.CPS_cmpRatio                               =  np.empty(0, float)
     self.MEC_cmpRatio                               =  np.empty(0, float)
     self.CSCC_cmpRatio                              =  np.empty(0, float)
+    self.SparseTen_cmpRatio                         =  np.empty(0, float)
     # Save All the densities Bounds
     self.density_bound_mec                          =  0
     # for different densities thats why we need a vector
