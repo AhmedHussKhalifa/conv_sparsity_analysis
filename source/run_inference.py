@@ -357,7 +357,6 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
     getDensityBound(layer, conv_methods['CSCC'])
     
-    exit(0)
 
     return 1
 
@@ -587,7 +586,7 @@ def ensure_model_name(x):
 
 ############################################################
 # Note this code does nort work for IV4 since its output tensor only takes batch size 1 
-# python3-tf run_inference.py --select Org --model_name IV3
+# python3-tf run_inference.py --select Org --model_name IV3 --END 1
 def main(_):
 
     model_path      =  WORKSPACE_DIR + FLAGS.model_name
@@ -618,15 +617,15 @@ def main(_):
         top1_count, top5_count = readAndPredictOptimizedImageByImage()
     else:
         top1_count, top5_count = readAndPredictLoopOptimized()
-    top1_accuracy = top1_count / num_images *100 
-    top5_accuracy = top5_count / num_images *100 
-    print('top1_accuracy == ', top1_accuracy ,'top5_accuracy == ',  top5_accuracy )
+    #top1_accuracy = top1_count / num_images *100 
+    #top5_accuracy = top5_count / num_images *100 
+    #print('top1_accuracy == ', top1_accuracy ,'top5_accuracy == ',  top5_accuracy )
 
     end = time.time()
 
     elapsedTime = end - start
 
-    print('Done in %s' % PATH_TO_EXCEL)
+    print('Done!')
 
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser()  
