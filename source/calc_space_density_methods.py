@@ -40,12 +40,12 @@ def getSpaceMEC(layer):
 
 # Calculates the required memory units for the **CSCC** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
-def getSpaceCSCC(layer, is_for_density_calc=True): 
+def getSpaceCSCC(layer): 
     space = layer.In*(layer.Ow + 1) + (2*layer.lowering_density*layer.Ow*layer.Ih*layer.Kw)
     return space
 
 # Calculates the required memory units for the **Im2Col** method
-def getSpaceIm2Col(layer, is_for_density_calc=True):
+def getSpaceIm2Col(layer):
     space = layer.In*layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
     return space
 
