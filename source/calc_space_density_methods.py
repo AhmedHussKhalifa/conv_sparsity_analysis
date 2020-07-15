@@ -23,12 +23,12 @@ def getSpaceCPO(layer):
 def getSpaceCPS(layer):
     # use the assumption of Ic = 1 && In = 1
     if (layer.Kw%layer.Sw) == 0:
-        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1) 
-                + (layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch)) 
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)\
+                +(layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch)) \
                 + (layer.patterns_sum)
     elif (layer.Kw%layer.Sw) != 0:
-        space = layer.In*math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1) 
-                + (layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch)) 
+        space = layer.In*math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)\
+                + (layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch))\
                 + (layer.patterns_sum)
     return space
 
@@ -56,9 +56,9 @@ def getDensityBoundMEC(layer):
         density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow*layer.Kw)/layer.Sw )
                             - (layer.In*layer.Kw/layer.Sw))
     else:
-        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow)*math.ceil(layer.Kw/layer.Sw) )
-                            - ((layer.In)*math.ceil(layer.Kw/layer.Sw) )
-
+        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow)*math.ceil(layer.Kw/layer.Sw) ) \
+                - ((layer.In)*math.ceil(layer.Kw/layer.Sw) ))
+    
     density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw*layer.Ic)
     return density_bound_mec
 
@@ -66,11 +66,11 @@ def getDensityBoundMEC(layer):
 def getDensityBoundCSCC(layer):
 
     if not layer.Kw % layer.Sw:
-        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic) 
-                        - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih*layer.sw)
+        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic) \
+                - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih*layer.sw)
     else:
-        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic)
-                        - math.ceil(layer.Kw/layer.sw)*layer.In*(layer.Ow+1)/(2*layer.Ic*layer.Ih)
+        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic) \
+                - math.ceil(layer.Kw/layer.sw)*layer.In*(layer.Ow+1)/(2*layer.Ic*layer.Ih)
 
     density_bound_cscc = density_bound_cscc/layer.Iw
     return density_bound_cscc
