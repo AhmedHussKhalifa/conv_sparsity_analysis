@@ -392,7 +392,6 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
         layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
         all_layers[ilayer] = layer_updated
         print(layer_updated)
-        exit(0)
 
     return 1
 
