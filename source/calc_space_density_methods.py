@@ -51,29 +51,30 @@ def getSpaceIm2Col(layer, is_for_density_calc=True):
 
 # Calculates the required density bound for MEC vs CPO
 def getDensityBoundMEC(layer):
-    density_bound_mec = ((layer.Ow*layer.Kw*layer.Ih) - ((layer.Ow*layer.Kw)/layer.Sw ) 
-                            - (layer.Kw/layer.Sw) - layer.Ow - 1)
-    density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw)
-    # without considering Ic != 1
-    # density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw*layer.Ic)
+
+    if not layer.Kw % layer.Sw:
+        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow*layer.Kw)/layer.Sw )
+                            - (layer.In*layer.Kw/layer.Sw))
+    else:
+        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow)*math.ceil(layer.Kw/layer.Sw) )
+                            - ((layer.In)*math.ceil(layer.Kw/layer.Sw) )
+
+    density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw*layer.Ic)
     return density_bound_mec
 
 # Calculates the required density bound for CSCC vs CPO
 def getDensityBoundCSCC(layer):
-    density_bound_cscc = (layer.Kw/layer.Iw) * ( (layer.Ow*layer.lowering_density) 
-                            - (layer.Ow+1)/(2*layer.Ih*layer.Sw) )
-    # without considering Ic != 1
-    # density_bound_cscc = (layer.Kw/layer.Iw) * ( (layer.Ow*layer.Ic*layer.lowering_density) 
-    #                         - (layer.Ow+1)/(2*layer.Ih*layer.Sw) )
+
+    if not layer.Kw % layer.Sw:
+        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic) 
+                        - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih*layer.sw)
+    else:
+        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic)
+                        - math.ceil(layer.Kw/layer.sw)*layer.In*(layer.Ow+1)/(2*layer.Ic*layer.Ih)
+
+    density_bound_cscc = density_bound_cscc/layer.Iw
     return density_bound_cscc
 
-# Calculates the required density bound for lowering matric 
-
-def getDensityBoundLoweringDensityCSCC(layer):
-    density_bound_lowering_density =  (layer.Ow+1) / (2*layer.Ih*layer.Sw*layer.Ow)
-    if (density_bound_lowering_density>layer.lowering_density):
-        print("WARNING: CSCC (Winner) Lowering denisty is lower than the bound")
-    return density_bound_lowering_density
 
 def getCR(layer, method_type, Im2col_space = 1, is_for_density_calc=False):
     if (method_type == conv_methods['CPO']):
