@@ -10,7 +10,6 @@ from myconstants import conv_methods
 import numpy as np
 
 # Calculates the required memory units for the **CPO** method
-# is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCPO(layer):
     # Used to caluclate the Compression Ratio
     # we should multiply by Ic here, create seperate functions for this
@@ -33,13 +32,11 @@ def getSpaceCPS(layer):
     return space
 
 # Calculates the required memory units for the **MEC**  method
-# is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceMEC(layer):
     space = layer.Ow*layer.Kw*layer.Ih_padded*layer.In*layer.Ic
     return space
 
 # Calculates the required memory units for the **CSCC** method
-# is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCSCC(layer): 
     space = layer.In*(layer.Ow + 1) + (2*sum(layer.lowering_den_batch)*layer.Ow*layer.Ih_padded*layer.Kw)
     return space
