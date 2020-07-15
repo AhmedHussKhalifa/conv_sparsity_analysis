@@ -58,8 +58,8 @@ class Conv_Layer(object):
     self.feature_density_channel                    = np.empty(0, float)
   def __str__(self):
       try:
-        s = ('\n=-=-=-=Conv_self=-=-=-= \n \
-                  input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+        s = ('\n\t\t\t\t=-=-=-=Conv_self=-=-=-= \n \
+                input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
                 \nSh: %d, Sw: %d \
                 \nOh: %d, Ow: %d \

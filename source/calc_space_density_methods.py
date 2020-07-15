@@ -13,6 +13,9 @@ import numpy as np
 def getSpaceCPO(layer):
     # Used to caluclate the Compression Ratio
     # we should multiply by Ic here, create seperate functions for this
+    term0 = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)
+    term1 = 2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
+    print("getSpaceCPO -->",term0, term1)
     if (layer.Kw%layer.Sw) == 0:
         space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic) 
     elif (layer.Kw%layer.Sw) != 0:
@@ -21,6 +24,10 @@ def getSpaceCPO(layer):
 
 def getSpaceCPS(layer):
     # use the assumption of Ic = 1 && In = 1
+    term0 = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)
+    term1 = (layer.Ih_padded*layer.Iw_padded*layer.Ic*sum(layer.ru_batch))
+    term2 = (layer.patterns_sum)
+    print("getSpaceCPS -->", term0, term1, term2)
     if (layer.Kw%layer.Sw) == 0:
         space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)\
                 +(layer.Ih_padded*layer.Iw_padded*layer.Ic*sum(layer.ru_batch)) \
