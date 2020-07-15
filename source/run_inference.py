@@ -474,6 +474,9 @@ def readImageBatch(startBatch, endBatch, qf_list):
             #current_jpeg_image      = '/home/h2amer/work/workspace/ML_TS/training_original/shard-9/944/n02834397_3465.JPEG'
             image_data              = readImage(current_jpeg_image)
             
+            # Print the path to image
+            print(current_jpeg_image)
+
             if models[FLAGS.model_name] == Models.inceptionresnetv2.value:
                 img_batch               = image_data
             else:
