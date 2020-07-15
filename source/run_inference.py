@@ -319,21 +319,7 @@ def patterns_cal(feature_maps, layer):
         exit(0)    
     return patterns
 
-def Methods_stats(feature_maps, layer):
 
-    feature_maps        = layer.image_padding(feature_maps)
-    lowering_matrix     = layer.lowering_rep(feature_maps)
-    layer.cal_density(lowering_matrix)
-    
-
-    # CALLED AFTER ALL IMAGE based through all layers
-    Im2col_space        = getCR(layer, conv_methods['Im2Col'])
-    for method in range(1,len(conv_methods)-1):
-        getCR(layer, method, Im2col_space)
-    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
-    getDensityBound(layer, conv_methods['CSCC'])
-
-    return lowering_matrix
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
@@ -355,21 +341,21 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     else:
         predictions = sess.run(softmax_tensor, {input_tensor_name: sess.run(image_data)})
 
-    count_Kw_Kh = 0
+
     for layer in all_layers:
-        if (layer.Kw == 1 and layer.Kh == 1):
-            count_Kw_Kh = count_Kw_Kh + 1
-    print("kw = 1 , kh = 1 counts", count_Kw_Kh)
-    # for layer in all_layers:
-    print(np.shape(all_layers))
-    layer = all_layers[40]
-    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
-    current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
-    current_feature_map             = np.squeeze(current_feature_map)
-    lowering_matrix                 = Methods_stats(current_feature_map, layer)
-    layer.patterns                  = np.append(layer.patterns,patterns_cal(current_feature_map, layer))
-    CPO                             = overlap_cal(lowering_matrix, layer)
-    print(layer)
+        current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+        current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+        current_feature_map             = np.squeeze(current_feature_map)
+        lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+        layer.patterns                  = np.append(layer.patterns,patterns_cal(current_feature_map, layer))
+        CPO                             = overlap_cal(lowering_matrix, layer)
+
+    # CALLED AFTER ALL IMAGE based through all layers
+    Im2col_space        = getCR(layer, conv_methods['Im2Col'])
+    for method in range(1,len(conv_methods)-1):
+        getCR(layer, method, Im2col_space)
+    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
+    getDensityBound(layer, conv_methods['CSCC'])
     
     exit(0)
 

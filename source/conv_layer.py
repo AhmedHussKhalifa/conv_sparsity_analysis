@@ -192,6 +192,12 @@ class Conv_Layer(object):
 
     self.lowering_density = self.tot_nz_lowering/resol_lowering
     self.lowering_den_batch = np.append(self.lowering_den_batch,self.lowering_density)
+  
+  def preprocessing(self, feature_maps):
+    feature_maps        = layer.image_padding(feature_maps)
+    lowering_matrix     = layer.lowering_rep(feature_maps)
+    layer.cal_density(lowering_matrix)
+    return lowering_matrix
 
   def print_all(self):
     # print("\n############ Print Layer object ############\n")
@@ -208,4 +214,4 @@ class Conv_Layer(object):
     print("Density Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix"
           %(self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count))
     # print("\n############ END ***\/** object ############\n")
-    
+  
