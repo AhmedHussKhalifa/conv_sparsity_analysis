@@ -350,7 +350,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
         layer.patterns                  = np.append(layer.patterns,patterns_cal(current_feature_map, layer))
         CPO                             = overlap_cal(lowering_matrix, layer)
 
-    # CALLED AFTER ALL IMAGE based through all layers
+    # CALLED AFTER IMAGE passed through all layers
     Im2col_space        = getCR(layer, conv_methods['Im2Col'])
     for method in range(1,len(conv_methods)-1):
         getCR(layer, method, Im2col_space)
