@@ -386,13 +386,25 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print('Done join')
     #print(results[0])
    
-    # for ilayer in range(len(all_layers)):
-    ilayer = 3
-    print('Conv Node %d' % ilayer)
-    layer              = all_layers[ilayer]
-    layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
-    all_layers[ilayer] = layer_updated
-    print(layer_updated)
+    for ilayer in range(len(all_layers)):
+        ilayer = 10
+        print('Conv Node %d' % ilayer)
+        layer              = all_layers[ilayer]
+        layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+        all_layers[ilayer] = layer_updated
+        break
+    
+
+    # Write the text files
+    f_name = FLAGS.gen_dir + "density.txt"
+    den_file = open(f_name, 'a')
+    
+    for layer in all_layers:
+        den_file.write('%f\t%f\t%f\n' % (layer.ru, layer.density_bound_mec, layer.density_bound_cscc))
+    den_file.close()
+    exit(0)
+
+
     exit(0)
     return 1
 
