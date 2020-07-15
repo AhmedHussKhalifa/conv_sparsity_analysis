@@ -314,7 +314,7 @@ def patterns_cal(feature_maps, layer):
         tot_pattern =  tot_pattern + (p+1)*patterns[p]
     
     layer.patterns_sum = patterns[0]
-    for In in range(1,len(patterns)):
+    for p in range(1,len(patterns)):
         layer.patterns_sum = layer.patterns_sum + 2*patterns[p]
 
     if (tot_pattern != layer.tot_nz_feature):
@@ -386,13 +386,14 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print('Done join')
     #print(results[0])
    
-    for ilayer in range(len(all_layers)):
-        print('Layer %d' % ilayer)
-        layer              = all_layers[ilayer]
-        layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
-        all_layers[ilayer] = layer_updated
-        print(layer_updated)
-
+    # for ilayer in range(len(all_layers)):
+    ilayer = 3
+    print('Layer %d' % ilayer)
+    layer              = all_layers[ilayer]
+    layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+    all_layers[ilayer] = layer_updated
+    print(layer_updated)
+    exit(0)
     return 1
 
 def construct_qf_list():

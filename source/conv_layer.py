@@ -82,6 +82,9 @@ class Conv_Layer(object):
                 self.density_bound_mec, self.density_bound_cscc
                 )
             )
+        for i in range(len(self.patterns)):
+          s = s + 'Pattern #%d# --> %d\t'%(i+1,self.patterns[i])
+        s = s + '\n'
       except:
                 s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
@@ -212,18 +215,32 @@ class Conv_Layer(object):
     return lowering_matrix
 
   def print_all(self):
-    # print("\n############ Print Layer object ############\n")
-    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")
-          %(self.Iw_padded, self.Ih_padded, self.Ic))
-    print(("After padding with --> %s Method || Shape rows: %d , cols: %d, channels: %d ")
-          %(self.padding, self.Iw_padded, self.Ih_padded, self.Ic))
-    print(("lowering matrix shape rows: %d , cols: %d")
-          %(self.lowering_shape[0], self.lowering_shape[1]))
-    print("Lowering nnz = %d ,feature map nnz = %d"
-          %(self.tot_nz_lowering, self.tot_nz_feature))
-    print(("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")
-          %(self.ru, self.lowering_density))
-    print("Density Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix"
-          %(self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count))
-    # print("\n############ END ***\/** object ############\n")
+    s = ('\n\t\t\t\t=-=-=-=Conv_self=-=-=-= \n \
+            input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+            \nKh: %d, Kw: %d, K: %d, padding: %s \
+            \nSh: %d, Sw: %d \
+            \nOh: %d, Ow: %d \
+            \nFeature Map shape rows: %d , cols: %d, channels: %d \
+            \nAfter padding Shape rows: %d , cols: %d, channels: %d \
+            \nLowering nnz = %d ,feature map nnz = %d \
+            \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix\n \
+            \n########### Compression Ratios  ###################### \
+            \nCPO_CR : %.3f || CPS_CR : %.3f || MEC_CR : %.3f || CSCC_CR : %.3f || SparseTensor : %.3f \
+            \nMEC Density Bound : %.3f || CSCC Density Bound : %.3f' %
+            (
+            self.input_tensor_name, self.output_tensor_name, \
+            self.In, self.Ic, self.Ih, self.Iw, \
+            self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow, \
+            self.Iw, self.Ih, self.Ic, \
+            self.Iw_padded, self.Ih_padded, self.Ic, \
+            self.tot_nz_lowering, self.tot_nz_feature, \
+            self.ru, self.lowering_density, \
+            self.CPO_cmpRatio, self.CPS_cmpRatio, self.MEC_cmpRatio, self.CSCC_cmpRatio, self.SparseTen_cmpRatio, \
+            self.density_bound_mec, self.density_bound_cscc
+            )
+        )
+    for i in range(len(self.patterns)):
+      s = s + 'Pattern #%d# --> %d\t'%(i+1,self.patterns[i])
+    s = s + '\n'
+    print(s)
   
