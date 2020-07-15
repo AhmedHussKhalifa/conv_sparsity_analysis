@@ -366,7 +366,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
     current_feature_map             = np.squeeze(current_feature_map)
-    lowering_matrix                 = Methods_stats(current_feature_map, layer)
+    lowering_matrix                 = preprocessing_layer(current_feature_map, layer)
     layer.patterns                  = np.append(layer.patterns,patterns_cal(current_feature_map, layer))
     CPO                             = overlap_cal(lowering_matrix, layer)
     print(layer)
