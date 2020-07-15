@@ -17,9 +17,9 @@ def getSpaceCPO(layer):
     term1 = 2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
     print("getSpaceCPO -->",term0, term1)
     if (layer.Kw%layer.Sw) == 0:
-        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic) 
     elif (layer.Kw%layer.Sw) != 0:
-        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
+        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic)
     return space
 
 def getSpaceCPS(layer):
@@ -51,7 +51,6 @@ def getSpaceCSCC(layer):
 # Calculates the required memory units for the **Im2Col** method
 def getSpaceIm2Col(layer):
     space = layer.In*layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
-    print("getSpaceIm2Col -->", space)
     return space
 
 # Calculates the required memory units for the **SparseTensor** method
