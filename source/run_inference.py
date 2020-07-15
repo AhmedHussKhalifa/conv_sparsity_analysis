@@ -363,12 +363,6 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     for layer in all_layers:
         print(layer)
     exit(0)
-    # CALLED AFTER ALL IMAGE based through all layers
-#    Im2col_space        = getCR(layer, conv_methods['Im2Col'])
-#    for method in range(1,len(conv_methods)-1):
-#        getCR(layer, method, Im2col_space)
-#    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
-#    getDensityBound(layer, conv_methods['CSCC'])
     
 
     return 1
