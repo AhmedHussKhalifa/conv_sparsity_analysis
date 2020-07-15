@@ -51,7 +51,8 @@ class Conv_Layer(object):
     self.feature_density_channel                    = np.empty(0, float)
   def __str__(self):
       try:
-        s = ('\n=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+        s = ('\n=-=-=-=Conv_self=-=-=-= \n \
+                  input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
                 \nSh: %d, Sw: %d \
                 \nOh: %d, Ow: %d \
@@ -66,8 +67,7 @@ class Conv_Layer(object):
                 self.Iw_padded, self.Ih_padded, self.Ic, \
                 self.Iw_padded, self.Ih_padded, self.Ic, \
                 self.tot_nz_lowering, self.tot_nz_feature, \
-                self.ru, self.lowering_density, \
-                self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count
+                self.ru, self.lowering_density
                 )
             )
       except:
