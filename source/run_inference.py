@@ -336,7 +336,8 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
         predictions = sess.run(softmax_tensor, {input_tensor_name: sess.run(image_data)})
 
 
-    for layer in all_layers:
+    for ilayer, layer in enumerate(all_layers):
+        print('Layer %d' % ilayer)
         current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
         current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
         current_feature_map             = np.squeeze(current_feature_map)
