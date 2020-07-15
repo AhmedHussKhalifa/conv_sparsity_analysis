@@ -46,6 +46,10 @@ def getSpaceIm2Col(layer):
     space = layer.In*layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
     return space
 
+def getSpaceSparseTensor(layer):
+    space = 2*layer.tot_nz_lowering
+    return space
+
 # Calculates the required density bound for MEC vs CPO
 def getDensityBoundMEC(layer):
 
