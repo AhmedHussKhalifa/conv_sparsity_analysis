@@ -45,7 +45,7 @@ def getSpaceMEC(layer):
 
 # Calculates the required memory units for the **CSCC** method
 def getSpaceCSCC(layer): 
-    space = layer.In*(layer.Ow + 1) + (2*sum(layer.lowering_den_batch)*layer.Ow*layer.Ih_padded*layer.Kw)
+    space = layer.In*(layer.Ow + 1) + ( 2*(layer.Ow * layer.Kw * layer.Ih_padded * layer.Ic * sum(layer.lowering_den_batch)))
     return space
 
 # Calculates the required memory units for the **Im2Col** method
