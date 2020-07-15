@@ -59,7 +59,7 @@ class Conv_Layer(object):
   def __str__(self):
       try:
         s = ('\n\t\t\t\t=-=-=-=Conv_self=-=-=-= \n \
-                  input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
+                input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
                 \nSh: %d, Sw: %d \
                 \nOh: %d, Ow: %d \
