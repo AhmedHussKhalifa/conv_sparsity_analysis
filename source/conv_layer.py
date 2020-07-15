@@ -68,7 +68,7 @@ class Conv_Layer(object):
                 \nLowering nnz = %d ,feature map nnz = %d \
                 \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix\n \
                 \n\t\t\t########### Compression Ratios  ########### \
-                \nCPO_CR : %.3f || CPS_CR : %.3f || MEC_CR : %.3f || CSCC_CR : %.3f || SparseTensor : %.3f \
+                \nCPO_CR : %.3fx || CPS_CR : %.3fx || MEC_CR : %.3fx || CSCC_CR : %.3fx || SparseTensor : %.3fx \
                 \nMEC Density Bound : %.3f || CSCC Density Bound : %.3f \n' %
                 (
                 self.input_tensor_name, self.output_tensor_name, \
