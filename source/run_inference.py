@@ -387,7 +387,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print(results[0])
    
     # for ilayer in range(len(all_layers)):
-    ilayer = 92
+    ilayer = 3
     print('Conv Node %d' % ilayer)
     layer              = all_layers[ilayer]
     layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
@@ -704,6 +704,13 @@ if __name__ == '__main__':
       type=str,  
       default='IV3',  
       help='model name'  
+  )
+
+  parser.add_argument(
+      '--gen_dir',
+      type=str,
+      default='../gen/',
+      help='generated directory'
   )
 
     parser.add_argument(  
