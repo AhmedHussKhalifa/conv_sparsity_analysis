@@ -343,6 +343,7 @@ def patterns_cal(feature_maps, layer):
 
 
 def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data):
+
     current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
     current_feature_map             = np.squeeze(current_feature_map)
@@ -385,27 +386,26 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #running_tasks[0].join()
     #print('Done join')
     #print(results[0])
-   
+    
+    txt_dir = FLAGS.gen_dir + "CR.txt"
+    CR_txt  = open(txt_dir, "w+")
+
+    f_name   = FLAGS.gen_dir + "density.txt"
+    den_file = open(f_name, 'a')
+
     for ilayer in range(len(all_layers)):
-        ilayer = 10
         print('Conv Node %d' % ilayer)
         layer              = all_layers[ilayer]
         layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
         all_layers[ilayer] = layer_updated
-        break
-    
-
-    # Write the text files
-    f_name = FLAGS.gen_dir + "density.txt"
-    den_file = open(f_name, 'a')
-    
-    for layer in all_layers:
+        print(layer_updated)
+        L = ("%f \t %f \t %f \t %f \t %f\n")%(layer.CPO_cmpRatio, layer.CPS_cmpRatio, layer.MEC_cmpRatio, layer.CSCC_cmpRatio, layer.SparseTen_cmpRatio,)
+        CR_txt.writelines(L)
         den_file.write('%f\t%f\t%f\n' % (layer.ru, layer.density_bound_mec, layer.density_bound_cscc))
+
     den_file.close()
-    exit(0)
-
-
-    exit(0)
+    CR_txt.close()
+    
     return 1
 
 def construct_qf_list():
