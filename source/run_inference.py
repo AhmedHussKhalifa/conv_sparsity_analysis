@@ -388,7 +388,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print(results[0])
     
     txt_dir = FLAGS.gen_dir + "CR.txt"
-    CR_txt  = open(txt_dir, "w+")
+    CR_txt  = open(txt_dir, "a")
 
     f_name   = FLAGS.gen_dir + "density.txt"
     den_file = open(f_name, 'a')
