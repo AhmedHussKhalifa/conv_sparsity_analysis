@@ -359,8 +359,6 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     
     exit(0)
 
-    #relu_conv_tensor = sess.graph.get_tensor_by_name('mixed_' + str(layerID) + '/join:0')
-
     return 1
 
 def construct_qf_list():
