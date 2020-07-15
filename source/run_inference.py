@@ -100,29 +100,31 @@ def get_DNN_info(sess):
     return all_layers
 
 
-def get_DNN_moules(all_layers):
-    mixed_map = np.empty((11,0,),int)
+def (all_layers):
+    txt_dir = FLAGS.gen_dir + "Modules.txt"
+    mixed_txt = open(txt_dir, 'a')
     tmp = np.empty(0,int)
     for ilayer in range(len(all_layers)):
         if "mixed" not in all_layers[ilayer].output_tensor_name:
-                tmp = np.append(tmp, ilayer, axis = 0)
-
-    mixed_map = np.append(mixed_map, tmp, axis = 1)
+                tmp = np.append(tmp, [ilayer], axis = 0)
+    
+    mixed_txt.write(str(tmp)+'\n')
     tmp = np.empty(0,int)
+    
     for ilayer in range(len(all_layers)):
         if "mixed" in all_layers[ilayer].output_tensor_name:
-                tmp = np.append(tmp, ilayer, axis = 0)
+                tmp = np.append(tmp, [ilayer], axis = 0)
     
-    mixed_map = np.append(mixed_map, tmp, axis = 1)           
+    mixed_txt.write(str(tmp)+'\n')        
     
     for mixed_count in range(1,11):
         tmp = np.empty(0,int)
         for ilayer in range(len(all_layers)):
             if (("mixed_%d")%mixed_count) in all_layers[ilayer].output_tensor_name:
-                tmp = np.append(tmp, ilayer, axis = 0)
-        mixed_map = np.append(mixed_map, tmp, axis = 1)
-
-    return mixed_map
+                tmp = np.append(tmp, [ilayer], axis = 0)
+        mixed_txt.write(str(tmp)+'\n')
+    mixed_txt.close()
+    return 1
 
 # ---- 
 
@@ -574,6 +576,11 @@ def readAndPredictOptimizedImageByImage():
 
             # Get the DNN info for all layers
             all_layers_info = get_DNN_info(sess)
+            
+            # # Get the moules info for all layers
+            # print("get module names")
+            # get_DNN_moules(all_layers_info)
+            # exit(0)
 
             if FLAGS.select == CodeMode.getCodeName(1): # Org
                 qf_idx     =  0
