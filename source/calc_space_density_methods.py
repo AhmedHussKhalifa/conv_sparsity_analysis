@@ -17,9 +17,9 @@ def getSpaceCPO(layer):
     term1 = 2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
     print("getSpaceCPO --> ",term0, term1)
     if (layer.Kw%layer.Sw) == 0:
-        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic) 
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic) 
     elif (layer.Kw%layer.Sw) != 0:
-        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic)
+        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
     return space
 
 def getSpaceCPS(layer):
@@ -87,15 +87,15 @@ def getDensityBoundCSCC(layer):
 
 def getCR(layer, method_type, Im2col_space = 1):
     if (method_type == conv_methods['CPO']):
-        layer.CPO_cmpRatio          = getSpaceCPO(layer)/Im2col_space
+        layer.CPO_cmpRatio          = Im2col_space/getSpaceCPO(layer)
     elif (method_type == conv_methods['CPS']):
-        layer.CPS_cmpRatio          = getSpaceCPS(layer)/Im2col_space
+        layer.CPS_cmpRatio          = Im2col_space/getSpaceCPS(layer)
     elif (method_type == conv_methods['MEC']):
-        layer.MEC_cmpRatio          = getSpaceMEC(layer)/Im2col_space
+        layer.MEC_cmpRatio          = Im2col_space/getSpaceMEC(layer)
     elif (method_type == conv_methods['CSCC']):
-        layer.CSCC_cmpRatio         = getSpaceCSCC(layer)/Im2col_space
+        layer.CSCC_cmpRatio         = Im2col_space/getSpaceCSCC(layer)
     elif (method_type == conv_methods['SparseTensor']):
-        layer.SparseTen_cmpRatio    = getSpaceSparseTensor(layer)/Im2col_space
+        layer.SparseTen_cmpRatio    = Im2col_space/getSpaceSparseTensor(layer)
     elif (method_type == conv_methods['Im2Col']):
         return getSpaceIm2Col(layer)
 
