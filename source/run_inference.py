@@ -220,7 +220,7 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
     return 0
 
 def overlap_cal(lowering_matrix, layer):
-    print('\nPatterns Calculations\n')
+    # print('\nPatterns Calculations\n')
     # SET CAL
     if (layer.Kw%layer.Sw)==0:
         num_ptr = math.floor(layer.Kw/layer.Sw)
@@ -273,7 +273,7 @@ def overlap_cal(lowering_matrix, layer):
     if (tot_pattern!=layer.tot_nz_lowering):
         print("ERROR: missing some patterns")
         exit(0)
-    print('\n-------------\n')
+    # print('\n-------------\n')
     return pattern_set_perc
 
 def patterns_cal(feature_maps, layer):
