@@ -40,11 +40,12 @@ class Conv_Layer(object):
     # for different densities thats why we need a vector
     self.density_bound_cscc                         =  np.empty(0, float) 
     # Save All the densities per Image in an single array
-    self.ru_all                                     =  np.empty(0, float)
-    self.lowering_den_all                           =  np.empty(0, float)
-    # Save All the densities per channel per Image 2D
-    # self.lowering_density_channel_all               =  np.empty((0,self.Ic), float)
-    # self.feature_desity_channel_all                 =  np.empty((0,self.Ic), float)
+    self.ru_batch                                   =  np.empty(0, float)
+    self.lowering_den_batch                         =  np.empty(0, float)
+    #CPS 
+    self.pattern_width                              =  4 # CONST for our approach 
+    self.patterns                                   =  np.empty(0, int)
+    seld.patterns_sum                               =  0
   def __str__(self):
       try:
         s = ('\n=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
@@ -52,18 +53,15 @@ class Conv_Layer(object):
                 \nSh: %d, Sw: %d \
                 \nOh: %d, Ow: %d \
                 \nFeature Map shape rows: %d , cols: %d, channels: %d \
-                \nAfter padding with --> %s Method || Shape rows: %d , cols: %d, channels: %d \
-                \nlowering matrix shape rows: %d , cols: %d \
+                \nAfter padding Shape rows: %d , cols: %d, channels: %d \
                 \nLowering nnz = %d ,feature map nnz = %d \
-                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix \
-                \nDensity Winner Counts : Feature Map --> [%d, (BOTH)-> %d , %d] <-- Lowering Matrix' %
+                \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix' %
                 (
                 self.input_tensor_name, self.output_tensor_name, \
                 self.In, self.Ic, self.Ih, self.Iw, \
                 self.Kh, self.Kw, self.K, self.padding, self.Sh, self.Sw, self.Oh, self.Ow, \
                 self.Iw_padded, self.Ih_padded, self.Ic, \
-                self.padding, self.Iw_padded, self.Ih_padded, self.Ic, \
-                self.lowering_shape[0], self.lowering_shape[1], \
+                self.Iw_padded, self.Ih_padded, self.Ic, \
                 self.tot_nz_lowering, self.tot_nz_feature, \
                 self.ru, self.lowering_density, \
                 self.feature_desity_count, self.both_feature_lowering , self.lower_desity_count
@@ -127,6 +125,7 @@ class Conv_Layer(object):
     self.tot_nz_feature = np.size(feature_maps[feature_maps != 0.0])
     resol_feature       = self.Iw_padded*self.Ih_padded*self.Ic
     self.ru             = self.tot_nz_feature/resol_feature
+    self.ru_batch       = np.append(self.ru_batch,self.ru)
     
     return feature_maps
   
@@ -177,13 +176,18 @@ class Conv_Layer(object):
   def cal_density(self, lowering_matrix):  
     self.lowering_shape = np.shape(lowering_matrix)
     resol_lowering = self.lowering_shape[0]*self.lowering_shape[1]
+    resol_lowering_ = self.Ow*self.Ih*self.Kw*self.Ic
+    # CHECK
+    if (resol_lowering != resol_lowering_):
+      print("ERROR in the shape of the in Lowering Matrix")
     self.tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
     
     # Here if you want to select a specific end for your calc 
     if (self.last_channel_cal != self.Ic):
       self.tot_nz_feature = np.size(feature_maps[feature_maps[:,:,::last_channel] != 0.0])
       resol_feature = self.Iw_padded*self.Ih_padded*last_channel
-      self.ru = tot_nz_feature/resol_feature
+      self.ru = self.tot_nz_feature/resol_feature
+      self.ru_batch = np.append(self.ru_batch, self.ru)
 
     self.lowering_density = self.tot_nz_lowering/resol_lowering
 

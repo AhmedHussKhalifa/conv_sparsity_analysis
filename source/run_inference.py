@@ -219,66 +219,6 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
 
     return 0
 
-
-def cal_densityBound(layer):
-
-    print('\n------ Im2col vs CPO-------\n')
-
-    S1 = layer.Ow*layer.Kw/layer.Sw + layer.Kw/layer.Sw + layer.Ow + 1 + 2*layer.ru*layer.Ih_padded*layer.Iw
-    S2 = layer.Ow*layer.Kw*layer.Ih
-    
-    if (layer.Kw%layer.Sw) == 0:
-        S1_cmp = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru # we should multiply by Ic here, create seperate functions for this
-    elif (layer.Kw%layer.Sw) != 0:
-        S1_cmp = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*layer.Ih*layer.Iw*layer.ru
-        
-    S_im2col = (math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*(math.ceil((layer.Ih-layer.Kh)/layer.Sh)+1)*layer.Kw*layer.Kh
-    print(('S_Im2col (S4) : %f')% (S_im2col))
-    print(('Im2col vs CPO S4-S1 : %f ')% (S_im2col-S1))
-    print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
-
-    print('------ MEC vs CPO -------\n')
-    #MEC - CPO
-    S_mec_cop = S2-S1
-    print(("MEC (S2) = %f  && CPO (S1) = %f")%(S2,S1))
-    
-    # print('Value of ru = %f , S1 = %f , S2 = %f, S2-S1= %f'%(ru, S1, S2, S_mec_cop))
-    density_bound_mec = (layer.Ow*layer.Kw*layer.Ih - (layer.Ow*layer.Kw)/layer.Sw - layer.Kw/layer.Sw - layer.Ow - 1)
-    density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw)
-
-    print(('MEC vs CPO S2-S1 : %f || with Feature_maps density = %f || Density bound MEC vs. CPO = %f')% (S_mec_cop, layer.ru, density_bound_mec))
-    print(("Compression Ratio (MEC vs Im2col): %.2fx")%(S_im2col/S2))
-    
-    #######
-
-    print('\n------ CSCC vs CPO-------\n')
-
-    # density_lowering = max(lowering_desity_channel)
-    # CSCC - CPO
-    term1 = layer.Ow*layer.density_lowering
-    term2 = (layer.Ow+1)/(2*layer.Ih*layer.Sw)
-    term0 = (layer.Kw/layer.Iw)
-    # print(term0,term1,term2)
-    density_bound_cscc = term0*(term1 - term2)
-
-    term1 = (math.ceil((layer.Iw-layer.Kw)/layer.Sw)+2)
-    term2 = 2*(math.ceil((layer.Iw-layer.Kw)/layer.Sw)+1)*layer.Kw*layer.Ih*layer.density_lowering
-    S_cscc = term1 + term2 #S3
-    
-    term0 = (2*layer.Ow*layer.Ih*layer.Kw*layer.density_lowering)
-    tetm1 = (2*layer.Ih*layer.Iw*layer.ru)
-    term2 = (layer.Kw/layer.Sw)*(layer.Ow+1)
-    S_cscc_cpo = term0 - term1 - term2
-
-    print(('S_cscc (S3) : %f')% (S_cscc))
-    print(('CSCC vs CPO S3-S1 : %f || with Lowering density = %f || Density bound CSCC vs. CPO = %f')% (S_cscc_cpo, layer.density_lowering, density_bound_cscc))
-    print(("Compression Ratio (CSCC vs Im2col): %.2fx")%(S_im2col/S_cscc))
-
-
-    print('\n------ END of Analysis-------\n')
-    
-    return (density_bound_mec, density_bound_cscc)
-
 def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     kw = int(kw)
     kh = int(kh)
@@ -342,8 +282,8 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     print('\n-------------\n')
     return pattern_set_perc
 
-def patterns_cal(feature_maps, tot_nz_feature, pattern_width = 4):
-    patterns = np.zeros(pattern_width)
+def patterns_cal(feature_maps, layer):
+    patterns = np.zeros(layer.pattern_width)
     nnz_pattern = 0
     for channel in range(0,feature_maps.shape[2]):
         x = feature_maps[:, :, channel]
@@ -366,32 +306,40 @@ def patterns_cal(feature_maps, tot_nz_feature, pattern_width = 4):
     
     for idx in range(0,patterns.shape[0]):
         print(("Pattern %d counts --> %d")%((idx+1),patterns[idx]))
+    
+    # layer.patterns= np.append(layer.patterns,patterns) 
+    
+    # Check
+    tot_pattern = 0
+    for p in range(0, layer.pattern_width):
+        tot_pattern =  tot_pattern + p*patterns[p]
+    
+    layer.patterns_sum = patterns[0]
+    for In in range(1,layer.In):
+        layer.patterns_sum = layer.patterns_sum + 2*patterns[p]
 
-    # Check 
-
-    tot_pattern =  patterns[0] + 2*patterns[1] + 3*patterns[2] + 4*patterns[3]
-    if (tot_pattern!=tot_nz_feature):
+    if (tot_pattern!=layer.tot_nz_feature):
         print("Total Number of NNZ elements from the patterns: %d"%nnz_pattern)
-        print("Total Number of Non-Zero of the feature : %d"%tot_nz_feature)
+        print("Total Number of Non-Zero of the feature : %d"%layer.tot_nz_feature)
         print("ERROR: missing some patterns")
         exit(0)    
     return patterns
 
-def featureMap_stats(feature_maps, layer):
+def Methods_stats(feature_maps, layer):
 
-    feature_maps = layer.image_padding(feature_maps)
-    lowering_matrix = layer.lowering_rep(feature_maps)
+    feature_maps        = layer.image_padding(feature_maps)
+    lowering_matrix     = layer.lowering_rep(feature_maps)
     layer.cal_density(lowering_matrix)
     
-
-    Im2col_space = getCR(layer, conv_methods['Im2Col'])
+    Im2col_space        = getCR(layer, conv_methods['Im2Col'])
+    
     for method in range(1,len(conv_methods)-1):
         getCR(layer, method, Im2col_space)
 
-    getDensityBound(layer, conv_methods['MEC'])
+    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
     getDensityBound(layer, conv_methods['CSCC'])
 
-    return lowering_matrix, layer.tot_nz_feature
+    return lowering_matrix
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
@@ -418,16 +366,15 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
         if (layer.Kw == 1 and layer.Kh == 1):
             count_Kw_Kh = count_Kw_Kh + 1
     print("kw = 1 , kh = 1 counts", count_Kw_Kh)
-    pattern_width = 4
     # for layer in all_layers:
     print(np.shape(all_layers))
     layer = all_layers[40]
     current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
     current_feature_map             = np.squeeze(current_feature_map)
-    lowering_matrix, tot_nz_feature = featureMap_stats(current_feature_map, layer)
+    lowering_matrix                 = Methods_stats(current_feature_map, layer)
+    layer.patterns                  = np.append(layer.patterns,patterns_cal(current_feature_map, layer))
     CPO                             = overlap_cal(lowering_matrix, layer.Kw, layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
-    CPS_patterns                    = patterns_cal(current_feature_map, layer.tot_nz_feature, pattern_width)
     print(layer)
     
     exit(0)

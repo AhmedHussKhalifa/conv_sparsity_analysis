@@ -12,52 +12,41 @@ import numpy as np
 # Calculates the required memory units for the **CPO** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCPO(layer, is_for_density_calc=True):
-    if is_for_density_calc:
-        # use the assumption of Ic = 1 && In = 1
-        space = (layer.Ow*layer.Kw)/layer.Sw + (layer.Kw/layer.Sw) + layer.Ow + 1 + 2*(layer.ru*layer.Ih*layer.Iw)
-    else:
-        # Used to caluclate the Compression Ratio
-        # we should multiply by Ic here, create seperate functions for this
-        if (layer.Kw%layer.Sw) == 0:
-            space = (layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic) 
-        elif (layer.Kw%layer.Sw) != 0:
-            space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic)
+    # Used to caluclate the Compression Ratio
+    # we should multiply by Ic here, create seperate functions for this
+    if (layer.Kw%layer.Sw) == 0:
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic) 
+    elif (layer.Kw%layer.Sw) != 0:
+        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic)
     return space
 
 def getSpaceCPS(layer, is_for_density_calc=True):
-    if is_for_density_calc:
-        # use the assumption of Ic = 1 && In = 1
-        space = 1
-    else:
-        # we should multiply by Ic here, create seperate functions for this
-        space = 0
+    # use the assumption of Ic = 1 && In = 1
+    if (layer.Kw%layer.Sw) == 0:
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1) 
+                + (layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch)) 
+                + (layer.patterns_sum)
+    elif (layer.Kw%layer.Sw) != 0:
+        space = layer.In*math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1) 
+                + (layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch)) 
+                + (layer.patterns_sum)
     return space
 
 # Calculates the required memory units for the **MEC**  method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceMEC(layer, is_for_density_calc=True):
-    if is_for_density_calc:
-        space = layer.Ow*layer.Kw*layer.Ih
-    else:
-        space = layer.Ow*layer.Kw*layer.Ih*layer.Ic
+    space = layer.Ow*layer.Kw*layer.Ih*layer.In*layer.Ic
     return space
 
 # Calculates the required memory units for the **CSCC** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCSCC(layer, is_for_density_calc=True): 
-    if is_for_density_calc:
-        # as we assumed Ic = 1 ... we onlu cal lowering_density for 1 channel
-        space = (layer.Ow + 1) + (2*layer.lowering_density*layer.Ow*layer.Ih*layer.Kw)
-    else:
-        space = (layer.Ow + 1) + (2*layer.lowering_density*layer.Ow*layer.Ih*layer.Kw*layer.Ic)
+    space = (layer.Ow + 1) + (2*layer.lowering_density*layer.Ow*layer.Ih*layer.Kw)
     return space
 
 # Calculates the required memory units for the **Im2Col** method
 def getSpaceIm2Col(layer, is_for_density_calc=True):
-    if is_for_density_calc:
-        space = layer.Ow*layer.Oh*layer.Kw*layer.Kh
-    else:
-        space = layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
+    space = layer.Ow*layer.Oh*layer.Ic*layer.Kw*layer.Kh
     return space
 
 # Calculates the required density bound for MEC vs CPO
