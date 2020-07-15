@@ -58,7 +58,7 @@ class Conv_Layer(object):
     self.feature_density_channel                    = np.empty(0, float)
   def __str__(self):
       try:
-        s = ('\n=-=-=-=Conv_self=-=-=-= \n \
+        s = ('\n\t\t\t\t=-=-=-=Conv_self=-=-=-= \n \
                   input_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
                 \nSh: %d, Sw: %d \
@@ -67,9 +67,9 @@ class Conv_Layer(object):
                 \nAfter padding Shape rows: %d , cols: %d, channels: %d \
                 \nLowering nnz = %d ,feature map nnz = %d \
                 \nDensity : Feature Map--> [ %f <-> %f ] <--Lowering Matrix\n \
-                \n########### Compression Ratios  ###################### \
+                \n\t\t\t########### Compression Ratios  ###########  \
                 \nCPO_CR : %.3f || CPS_CR : %.3f || MEC_CR : %.3f || CSCC_CR : %.3f || SparseTensor : %.3f \
-                \nMEC Density Bound : %.3f || CSCC Density Bound : %.3f' %
+                \nMEC Density Bound : %.3f || CSCC Density Bound : %.3f\n\n' %
                 (
                 self.input_tensor_name, self.output_tensor_name, \
                 self.In, self.Ic, self.Ih, self.Iw, \
@@ -82,6 +82,9 @@ class Conv_Layer(object):
                 self.density_bound_mec, self.density_bound_cscc
                 )
             )
+        for i in range(len(self.patterns)):
+          s = s + 'Pattern #%d# --> %d\t'%(i+1,self.patterns[i])
+        s = s +'\n'
       except:
                 s = ('=-=-=-=Conv_self=-=-=-= \ninput_tensor_name: %s, output_tensor_name: %s \nIn: %d, Ic: %d, Ih: %d, Iw: %d \
                 \nKh: %d, Kw: %d, K: %d, padding: %s \
