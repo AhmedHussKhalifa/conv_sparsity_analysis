@@ -14,9 +14,9 @@ def getSpaceCPO(layer):
     # Used to caluclate the Compression Ratio
     # we should multiply by Ic here, create seperate functions for this
     if (layer.Kw%layer.Sw) == 0:
-        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic) 
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic) 
     elif (layer.Kw%layer.Sw) != 0:
-        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic)
+        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*sum(layer.ru_batch)*layer.Ic)
     return space
 
 def getSpaceCPS(layer):
@@ -48,7 +48,7 @@ def getSpaceIm2Col(layer):
 
 # Calculates the required memory units for the **SparseTensor** method
 def getSpaceSparseTensor(layer):
-    space = 2*layer.tot_nz_lowering
+    space = 2*layer.tot_nz_feature
     return space
 
 # Calculates the required density bound for MEC vs CPO
