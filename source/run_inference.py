@@ -321,18 +321,12 @@ def patterns_cal(feature_maps, layer):
 
 
 
-def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
+def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_layers):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
     # predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data}) # n, m, 3
 
     # Only used for InceptionResnetV2
     assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value)
-
-    all_layers = get_DNN_info(sess)
-
-    #for l in all_layers:
-    #    print(l)
-    # exit(0)
 
     input_tensor = 'image:0'
     if models[FLAGS.model_name] == Models.IV3.value:
@@ -474,7 +468,10 @@ def readAndPredictOptimizedImageByImage():
             softmax_tensor = sess.graph.get_tensor_by_name(final_tensor_names[FLAGS.model_name])
             print('New session group has been created')
 
-               
+        # Get the DNN info for all layers at the start
+        if actual_idx == FLAGS.START:
+            all_layers_info = get_DNN_info(sess)
+
         if original_img_ID < 0: ## till 48000 shoule generate again
             continue
        
@@ -483,7 +480,9 @@ def readAndPredictOptimizedImageByImage():
             shard_num = math.ceil(original_img_ID/10000) -1 
             folder_num = math.ceil(original_img_ID/1000) 
 
-            
+            # Get the DNN info for all layers
+            all_layers_info = get_DNN_info(sess)
+
             if FLAGS.select == CodeMode.getCodeName(1): # Org
                 qf_idx     =  0
                 qf         = 110
@@ -494,7 +493,7 @@ def readAndPredictOptimizedImageByImage():
                     image_data = tf.image.decode_jpeg(image_data, channels=3)
                 else:
                     image_data = tf.gfile.FastGFile(current_jpeg_image, 'rb').read()
-                run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx)
+                run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx, all_layers_info)
             
             else:
                 for qf_idx, qf in enumerate(qf_list) :
@@ -505,7 +504,7 @@ def readAndPredictOptimizedImageByImage():
                     
                     image_data = tf.read_file(current_jpeg_image)
                     image_data = tf.image.decode_jpeg(image_data, channels=3)
-                    run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx)
+                    run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx, all_layers_info)
 
         if (actual_idx) % 50 == 0:
                 tf.reset_default_graph()
