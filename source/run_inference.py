@@ -343,6 +343,7 @@ def patterns_cal(feature_maps, layer):
 
 
 def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data):
+
     current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
     current_feature_map             = np.squeeze(current_feature_map)
@@ -386,13 +387,18 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print('Done join')
     #print(results[0])
    
-    # for ilayer in range(len(all_layers)):
-    ilayer = 3
-    print('Conv Node %d' % ilayer)
-    layer              = all_layers[ilayer]
-    layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
-    all_layers[ilayer] = layer_updated
-    print(layer_updated)
+    txt_dir = FLAGS.gen_dir+"CR.txt"
+    CR_txt = open(txt_dir,"w+")
+    for ilayer in range(2):
+        print('Conv Node %d' % ilayer)
+        layer              = all_layers[ilayer]
+        layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+        all_layers[ilayer] = layer_updated
+        print(layer_updated)
+        L = ("%f \t %f \t %f \t %f \t %f\n")%(layer.CPO_cmpRatio, layer.CPS_cmpRatio, layer.MEC_cmpRatio, layer.CSCC_cmpRatio, layer.SparseTen_cmpRatio,)
+        CR_txt.writelines(L)
+    
+    CR_txt.close()
     exit(0)
     return 1
 
