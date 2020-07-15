@@ -53,7 +53,6 @@ def getSpaceSparseTensor(layer):
 
 # Calculates the required density bound for MEC vs CPO
 def getDensityBoundMEC(layer):
-
     if not layer.Kw % layer.Sw:
         density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih_padded) - ((layer.In*layer.Ow*layer.Kw)/layer.Sw )
                             - (layer.In*layer.Kw/layer.Sw))

@@ -352,9 +352,9 @@ def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, ima
     Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
     for method in range(1,len(conv_methods)):
         getCR(layer, method, Im2col_space)
-    layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
-    getDensityBound(layer, conv_methods['CSCC'])
     
+    getDensityBound(layer, conv_methods['MEC'])
+    getDensityBound(layer, conv_methods['CSCC'])
     # append the results
     #results[ilayer] = layer
     return layer
@@ -385,7 +385,7 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #running_tasks[0].join()
     #print('Done join')
     #print(results[0])
-    
+   
     for ilayer in range(len(all_layers)):
         print('Layer %d' % ilayer)
         layer              = all_layers[ilayer]
