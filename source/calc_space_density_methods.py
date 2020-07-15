@@ -92,4 +92,4 @@ def getDensityBound(layer, method_type):
     if (method_type == conv_methods['MEC']):
         layer.density_bound_mec = getDensityBoundMEC(layer)
     elif (method_type == conv_methods['CSCC']):
-        layer.density_bound_cscc = np.append(layer.density_bound_cscc, getDensityBoundCSCC(layer))
+        layer.density_bound_cscc = getDensityBoundCSCC(layer)
