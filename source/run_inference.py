@@ -310,11 +310,11 @@ def patterns_cal(feature_maps, layer):
     
     # Check
     tot_pattern = 0
-    for p in range(0, len(patterns)):
+    for p in range(0, layer.pattern_width):
         tot_pattern =  tot_pattern + (p+1)*patterns[p]
     
     layer.patterns_sum = patterns[0]
-    for p in range(1,len(patterns)):
+    for In in range(1,len(patterns)):
         layer.patterns_sum = layer.patterns_sum + 2*patterns[p]
 
     if (tot_pattern != layer.tot_nz_feature):
