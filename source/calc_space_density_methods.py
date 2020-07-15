@@ -15,33 +15,33 @@ def getSpaceCPO(layer):
     # Used to caluclate the Compression Ratio
     # we should multiply by Ic here, create seperate functions for this
     if (layer.Kw%layer.Sw) == 0:
-        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic) 
+        space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic) 
     elif (layer.Kw%layer.Sw) != 0:
-        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih*layer.Iw*layer.ru*layer.Ic)
+        space = math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)+2*(layer.Ih_padded*layer.Iw_padded*layer.ru*layer.Ic)
     return space
 
 def getSpaceCPS(layer):
     # use the assumption of Ic = 1 && In = 1
     if (layer.Kw%layer.Sw) == 0:
         space = layer.In*(layer.Kw/layer.Sw)*(layer.Ow+1)\
-                +(layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch)) \
+                +(layer.Ih_padded*layer.Iw_padded*layer.Ic*sum(layer.ru_batch)) \
                 + (layer.patterns_sum)
     elif (layer.Kw%layer.Sw) != 0:
         space = layer.In*math.ceil(layer.Kw/layer.Sw)*(layer.Ow+1)\
-                + (layer.Ih*layer.Iw*layer.Ic*sum(layer.ru_batch))\
+                + (layer.Ih_padded*layer.Iw_padded*layer.Ic*sum(layer.ru_batch))\
                 + (layer.patterns_sum)
     return space
 
 # Calculates the required memory units for the **MEC**  method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceMEC(layer):
-    space = layer.Ow*layer.Kw*layer.Ih*layer.In*layer.Ic
+    space = layer.Ow*layer.Kw*layer.Ih_padded*layer.In*layer.Ic
     return space
 
 # Calculates the required memory units for the **CSCC** method
 # is_for_density is a flag to know whether we should use the assumptions for space calculations or not
 def getSpaceCSCC(layer): 
-    space = layer.In*(layer.Ow + 1) + (2*sum(layer.lowering_den_batch)*layer.Ow*layer.Ih*layer.Kw)
+    space = layer.In*(layer.Ow + 1) + (2*sum(layer.lowering_den_batch)*layer.Ow*layer.Ih_padded*layer.Kw)
     return space
 
 # Calculates the required memory units for the **Im2Col** method
@@ -53,26 +53,26 @@ def getSpaceIm2Col(layer):
 def getDensityBoundMEC(layer):
 
     if not layer.Kw % layer.Sw:
-        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow*layer.Kw)/layer.Sw )
+        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih_padded) - ((layer.In*layer.Ow*layer.Kw)/layer.Sw )
                             - (layer.In*layer.Kw/layer.Sw))
     else:
-        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih) - ((layer.In*layer.Ow)*math.ceil(layer.Kw/layer.Sw) ) \
+        density_bound_mec = ((layer.In*layer.Ic*layer.Ow*layer.Kw*layer.Ih_padded) - ((layer.In*layer.Ow)*math.ceil(layer.Kw/layer.Sw) ) \
                 - ((layer.In)*math.ceil(layer.Kw/layer.Sw) ))
     
-    density_bound_mec = density_bound_mec / (2*layer.Ih*layer.Iw*layer.Ic)
+    density_bound_mec = density_bound_mec / (2*layer.Ih_padded*layer.Iw_padded*layer.Ic)
     return density_bound_mec
 
 # Calculates the required density bound for CSCC vs CPO
 def getDensityBoundCSCC(layer):
 
     if not layer.Kw % layer.Sw:
-        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic) \
-                - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih*layer.sw)
+        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih_padded*layer.Ic) \
+                - layer.In*layer.Kw*(layer.Ow+1)/(2*layer.Ic*layer.Ih_padded*layer.sw)
     else:
-        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih*layer.Ic) \
-                - math.ceil(layer.Kw/layer.sw)*layer.In*(layer.Ow+1)/(2*layer.Ic*layer.Ih)
+        density_bound_cscc = layer.Kw*layer.Ow*sum(layer.lowering_den_batch) + layer.In*(layer.Ow+1)/(2*layer.Ih_padded*layer.Ic) \
+                - math.ceil(layer.Kw/layer.sw)*layer.In*(layer.Ow+1)/(2*layer.Ic*layer.Ih_padded)
 
-    density_bound_cscc = density_bound_cscc/layer.Iw
+    density_bound_cscc = density_bound_cscc/layer.Iw_padded
     return density_bound_cscc
 
 
