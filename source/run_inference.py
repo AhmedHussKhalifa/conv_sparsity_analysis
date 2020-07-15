@@ -25,7 +25,8 @@ import argparse
 from model_names import Models
 from code_modes  import CodeMode
 from conv_layer import Conv_Layer
-from calc_space_methods import *
+from calc_space_density_methods import *
+from sparsity_method_types import SparsityMethodTypes
 
 # import imagenet_preprocessing as ipp
 from preprocessing import inception_preprocessing, vgg_preprocessing
@@ -38,12 +39,16 @@ np.set_printoptions(threshold=sys.maxsize)
 # Import all constants
 from myconstants import *
 
+# Import process
+import multiprocessing
+from multiprocessing import Process
+
+
 def create_graph(): 
     with tf.gfile.FastGFile(MODEL_PATH + Frozen_Graph[FLAGS.model_name], 'rb') as f: 
         graph_def = tf.GraphDef()
         graph_def.ParseFromString(f.read())
         tf.import_graph_def(graph_def, name='')
-
 
 def get_DNN_info(sess):
 
@@ -87,12 +92,13 @@ def get_DNN_info(sess):
                 
                 # Create the conv layer
                 conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In=1, padding=padding_type)
+                conv_layer.padding_cal()
                 all_layers.append(conv_layer)
         except ValueError:
             print('%s is an Op.' % n.name)
 
     return all_layers
-
+    
 # ---- 
 
 def print_tensors(sess):
@@ -218,96 +224,13 @@ def run_predictions(sess, image_batch, softmax_tensor, startBatch, qf_idx_list, 
 
     return 0
 
-
-def cal_densityBound(Ow,Iw,Ih,Kw, Kh,sw,sh ,ru, density_lowering, feature_desity_channel, lowering_desity_channel):
-    # Iw = 1
-    # Ih = 1
-    # sw = 1
-    # Kw = 1
-    # ru = 1
-    # density_lowering = 1
-    # Ow = 1
-    Kw = int(Kw)
-    Kh = int(Kh)
-    Ow = int(Ow)
-    print(("Ow = %d ,Iw = %d ,Ih = %d ,Kw = %d ,sw = %d ,density_feature = %f , density_lowering = %f")%(Ow,Iw,Ih,Kw,sw,ru, density_lowering))
-
-    print('\n------ Im2col vs CPO-------\n')
-
-    S1 = Ow*Kw/sw + Kw/sw + Ow + 1 + 2*ru*Ih*Iw
-    S2 = Ow*Kw*Ih
-    
-    if (Kw%sw) == 0:
-        S1_cmp = (Kw/sw)*(Ow+1)+2*Ih*Iw*ru # we should multiply by Ic here, create seperate functions for this
-    elif (Kw%sw) != 0:
-        S1_cmp = math.ceil(Kw/sw)*(Ow+1)+2*Ih*Iw*ru
-        
-    S_im2col = (math.ceil((Iw-Kw)/sw)+1)*(math.ceil((Ih-Kh)/sh)+1)*Kw*Kh
-    print(('S_Im2col (S4) : %f')% (S_im2col))
-    print(('Im2col vs CPO S4-S1 : %f ')% (S_im2col-S1))
-    print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1_cmp))
-    #print(("Compression Ratio (CPO vs Im2col): %.2fx")%(S_im2col/S1))
-
-    print('------ MEC vs CPO -------\n')
-    #MEC - CPO
-    S_mec_cop = S2-S1
-    print(("MEC (S2) = %f  && CPO (S1) = %f")%(S2,S1))
-    
-    # print('Value of ru = %f , S1 = %f , S2 = %f, S2-S1= %f'%(ru, S1, S2, S_mec_cop))
-    density_bound_mec = (Ow*Kw*Ih - (Ow*Kw)/sw - Kw/sw - Ow - 1)
-    density_bound_mec = density_bound_mec / (2*Ih*Iw)
-
-    print(('MEC vs CPO S2-S1 : %f || with Feature_maps density = %f || Density bound MEC vs. CPO = %f')% (S_mec_cop, ru, density_bound_mec))
-    print(("Compression Ratio (MEC vs Im2col): %.2fx")%(S_im2col/S2))
-    
-    #######
-
-    print('\n------ CSCC vs CPO-------\n')
-
-    # density_lowering = max(lowering_desity_channel)
-    # CSCC - CPO
-    term1 = Ow*density_lowering
-    term2 = (Ow+1)/(2*Ih*sw)
-    term0 = (Kw/Iw)
-    # print(term0,term1,term2)
-    density_bound_cscc = term0*(term1 - term2)
-
-    term1 = (math.ceil((Iw-Kw)/sw)+2)
-    term2 = 2*(math.ceil((Iw-Kw)/sw)+1)*Kw*Ih*density_lowering
-    S_cscc = term1 + term2 #S3
-    
-    term0 = (2*Ow*Ih*Kw*density_lowering)
-    tetm1 = (2*Ih*Iw*ru)
-    term2 = (Kw/sw)*(Ow+1)
-    S_cscc_cpo = term0 - term1 - term2
-
-    print(('S_cscc (S3) : %f')% (S_cscc))
-    print(('CSCC vs CPO S3-S1 : %f || with Lowering density = %f || Density bound CSCC vs. CPO = %f')% (S_cscc_cpo, density_lowering, density_bound_cscc))
-    print(("Compression Ratio (CSCC vs Im2col): %.2fx")%(S_im2col/S_cscc))
-
-
-    print('\n------ END of Analysis-------\n')
-    
-    return (density_bound_mec, density_bound_cscc)
-
-def my_func(arg):
-  arg = tf.convert_to_tensor(arg, dtype=tf.int32)
-  return arg
-
-def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
-    kw = int(kw)
-    kh = int(kh)
-    sw = int(sw)
-    sh = int(sh)
-
-
-    print('Patterns Calculations')
-    tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
+def overlap_cal(lowering_matrix, layer):
+    # print('\nPatterns Calculations\n')
     # SET CAL
-    if (kw%sw)==0:
-        num_ptr = math.floor(kw/sw)
+    if (layer.Kw%layer.Sw)==0:
+        num_ptr = math.floor(layer.Kw/layer.Sw)
     else:
-        num_ptr = math.floor(kw/sw) + 1
+        num_ptr = math.floor(layer.Kw/layer.Sw) + 1
     
     pattern_set = np.zeros(num_ptr)
     for pattern_idx in range(num_ptr,1,-1):
@@ -339,10 +262,10 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
     pattern_idx = 1
     pattern_set[pattern_idx-1] = (np.size(lowering_matrix[lowering_matrix != 0.0]))
     
-    pattern_set_perc = 100*pattern_set/tot_nz_feature
+    pattern_set_perc = 100*pattern_set/layer.tot_nz_feature
     
-    for pattern_idx in range(0,np.size(pattern_set)):
-        print(("Counts of Set #%d --> %f ")%(pattern_idx+1,pattern_set_perc[pattern_idx]))
+    # for pattern_idx in range(0,np.size(pattern_set)):
+    #     print(("Counts of Set #%d --> %f ")%(pattern_idx+1,pattern_set_perc[pattern_idx]))
 
     # Checks 
     tot_pattern = 0
@@ -350,191 +273,99 @@ def overlap_cal(lowering_matrix, kw ,kh , sw, sh , tot_nz_feature):
         tot_pattern = tot_pattern + (pattern_idx+1)*pattern_set[pattern_idx]
 
 
-    print("Total Number of Non-Zero after creating the patterns: %d"%tot_pattern)
-    print("Total Number of Non-Zero of the lowering matrix: %d"%tot_nz_lowering)
-    if (tot_pattern!=tot_nz_lowering):
+    # print("Total Number of Non-Zero after creating the patterns: %d"%tot_pattern)
+    # print("Total Number of Non-Zero of the lowering matrix: %d"%layer.tot_nz_lowering)
+    if (tot_pattern!=layer.tot_nz_lowering):
         print("ERROR: missing some patterns")
         exit(0)
-    print('\n-------------\n')
+    # print('\n-------------\n')
     return pattern_set_perc
 
-def feature_analysis(feature_maps, padding, kw ,kh , sw, sh, Ow, Oh):
-    # It shpould be given by the model 
-    Ow = int(Ow)
-    Oh = int(Oh)
-    filter_width = int(kw)
-    filter_height = int(kh)
-    Iw = feature_maps.shape[0]
-    Ih = feature_maps.shape[1]
-    in_width = int(Iw)
-    in_height = int(Ih)
-    print("Iw : %d, Ih : %d"%(Iw,Ih))
-    strides = np.array([0,sh,sw])
+def patterns_cal(feature_maps, layer):
+    patterns = np.zeros(layer.pattern_width)
+    nnz_pattern = 0
+    for channel in range(0,feature_maps.shape[2]):
+        x = feature_maps[:, :, channel]
+        for i in range(0,feature_maps.shape[1]):
+            for j in range(0, (math.floor(feature_maps.shape[0]/layer.pattern_width)*layer.pattern_width), layer.pattern_width):
+                catched_pattern = feature_maps[range(j,j+layer.pattern_width),i,channel]
+                pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+                nnz_pattern = nnz_pattern + pattern_seq
+                if (pattern_seq>0.0):
+                    patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1            
+            remain = range((math.floor(feature_maps.shape[0]/layer.pattern_width)*layer.pattern_width) 
+                            ,(feature_maps.shape[0]))
+            catched_pattern = feature_maps[remain, i , channel]
+            pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+            nnz_pattern = nnz_pattern + pattern_seq
+            if ((pattern_seq > 0.0) & (pattern_seq == 3.0)):
+                patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1
+            elif ((pattern_seq > 0.0) & (pattern_seq <= 2.0)):
+                patterns[0] = patterns[0] + pattern_seq
     
-    #Padding Feature Map
-    if (padding =='SAME'):
-        print("Padding --> ","SAME")
-
-
-        out_height = math.ceil(float(in_height) / float(strides[1]))
-        out_width  = math.ceil(float(in_width) / float(strides[2]))
-
-        pad_along_height = max((out_height - 1) * strides[1] +
-                            filter_height - in_height, 0)
-        pad_along_width = max((out_width - 1) * strides[2] +
-                           filter_width - in_width, 0)
-        pad_top = pad_along_height // 2
-        pad_bottom = pad_along_height - pad_top
-        pad_left = pad_along_width // 2
-        pad_right = pad_along_width - pad_left
-
-        print("tensorflow --> ",pad_top , pad_bottom, pad_left, pad_right)
-
-
-    elif (padding =='VALID'):
-        print("Padding --> ","VALID")
-        out_height  = math.ceil(float(in_height - filter_height + 1) / float(strides[1]))
-        out_width   = math.ceil(float(in_width - filter_width + 1) / float(strides[2]))
-        pad_top = 0
-        pad_bottom = 0
-        pad_left = 0
-        pad_right = 0
-    else:
-        print("ERROR in padding at inputs")
-        exit(0)
-
-    if ((Ow != out_width) or (Oh != out_height)):
-        print("ERROR in padding in dimensions")
-        exit(0)
-
-
-    paddings = my_func([[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]])
-    paddings = paddings.eval(session=tf.compat.v1.Session())
-    #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
-    feature_maps = tf.pad(feature_maps, paddings, "CONSTANT",constant_values=0)
-    feature_maps = feature_maps.eval(session=tf.compat.v1.Session())
+    # for idx in range(0,patterns.shape[0]):
+    #     print(("Pattern %d counts --> %d")%((idx+1),patterns[idx]))
     
-    # END of padding calclations
-    # Cal the shape after padding
-    m_shape = np.shape(feature_maps)
-    K       = feature_maps.shape[2]
-
-    # lowering_matrix = np.empty((m_shape[1]-kw+1,kw*m_shape[1]*m_shape[2]), int)
-    # lowering_matrix = np.empty((m_shape[1]-kw+1,0), int)
-    lowering_matrix = np.empty((Ow,0), int)
-    print(("Feature Map shape rows: %d , cols: %d, channels: %d ")%(m_shape[0],m_shape[1],m_shape[2]))
-    print(("Lowering Matrix shape rows: %d , cols: %d")%(lowering_matrix.shape[0],lowering_matrix.shape[1]))
-    lowering_desity_channel = np.empty(0, float)
-    feature_desity_channel  = np.empty(0, float)
+    # layer.patterns= np.append(layer.patterns,patterns) 
     
-    count_channels = 0
+    # Check
+    tot_pattern = 0
+    for p in range(0, len(patterns)):
+        tot_pattern =  tot_pattern + (p+1)*patterns[p]
     
-    lower_desity_count = 0
-    feature_desity_count = 0
-    both_feature_lowering = 0
+    layer.patterns_sum = patterns[0]
+    for p in range(1,len(patterns)):
+        layer.patterns_sum = layer.patterns_sum + 2*patterns[p]
+
+    if (tot_pattern != layer.tot_nz_feature):
+        print("Total Number of NNZ elements from the patterns: %d"%nnz_pattern)
+        print("Total Number of Non-Zero of the feature : %d"%layer.tot_nz_feature)
+        print("ERROR: missing some patterns")
+        exit(0)    
+    return patterns
+
+
+
+#def compute_info_all_layers(all_layers):
+#    for ilayer, layer in enumerate(all_layers):
+#        print('*********Layer %d' % ilayer)
+#        current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+#        current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+#        current_feature_map             = np.squeeze(current_feature_map)
+#        lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+#        layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
+#        CPO                             = overlap_cal(lowering_matrix, layer)
+#        Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
+#        for method in range(1,len(conv_methods)):
+#                getCR(layer, method, Im2col_space)
+#        layer.density_bound_mec =  getDensityBound(layer, conv_methods['MEC'])
+#        getDensityBound(layer, conv_methods['CSCC'])
+
+
+def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data):
+
+    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+    current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+    current_feature_map             = np.squeeze(current_feature_map)
+    lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+    layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
+    CPO                             = overlap_cal(lowering_matrix, layer)
+    Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
+    for method in range(1,len(conv_methods)):
+        getCR(layer, method, Im2col_space)
     
-    for idx in range(K):
-    # for idx in range(0,20):
-        count_channels = count_channels + 1;
-        m_f = feature_maps[:, :, idx]  
-        # #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
-        # m_f = tf.pad(m_f, paddings, "CONSTANT",constant_values=0)
-        # m_f = m_f.eval(session=tf.compat.v1.Session())
-        # print("After Padding: ",m_f.shape)
-        # Here we creates the lowering Matrix for MEC and CSCC
-        # for channels in range(0,m_shape[0]):
-        sub_tmp = np.empty((0,kw*m_shape[0]), int)
-        # print("Feature_maps: \n")
-        # output
-        # print(m_f)
-        # for col_int in range(0,m_shape[1]-kw+1,sw):
-        if ((kw>1) or (kh >1)):
-            for col_int in range(0, m_shape[1], sw):
-                if (col_int+kw)>m_shape[1] :
-                    break
-                x = m_f[:,col_int:col_int+kw] # col_int+kw-1 without 1 bec it the stop element
-                x = x.ravel(order='K') # K -> for row major && F -> for col major
-                x = np.reshape(x,(1,np.size(x)))
-                # print("x shape : ", x.shape)
-                sub_tmp = np.append(sub_tmp, x, axis=0)
-                # print(("Start: %d, End: %d")%(col_int,col_int+kw))
-                # print("sub_tmp: \n", sub_tmp)
-                # print("sub shape : ", sub_tmp.shape)
-        else:
-            sub_tmp = m_f.transpose();
-        # exit(0)
-        # print(m_f)
-        # print("Final sub shape : ", sub_tmp.shape)
-        lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
-        # print("lowering_matrix : ", lowering_matrix.shape)
-        # print(np.shape(sub_tmp))
-        # print(np.shape(lowering_matrix))
-        # print(("Channel #%d")%(idx))
-        # print(lowering_matrix)
-        # exit(0)
-        lowering_desity_channel = np.append(lowering_desity_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
-        feature_desity_channel = np.append(feature_desity_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
+    getDensityBound(layer, conv_methods['MEC'])
+    getDensityBound(layer, conv_methods['CSCC'])
+    # append the results
+    #results[ilayer] = layer
+    return layer
 
-        if (feature_desity_channel[idx] < lowering_desity_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
-            lower_desity_count = lower_desity_count + 1
-        elif (feature_desity_channel[idx] < lowering_desity_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
-            feature_desity_count = feature_desity_count + 1
-        else:
-            both_feature_lowering = feature_desity_count + 1
-            # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_desity_channel[idx]))
-
-    print("Counts : Feature Map --> [%d, %d , %d] <-- Lowering "%(feature_desity_count, both_feature_lowering , lower_desity_count))
-    # print("Desity per channel of lowering matrix : ",lowering_desity_channel)
-    # print("Desity  per channel of feature matrix : ",feature_desity_channel)
-    lowering_shape = np.shape(lowering_matrix)
-    print("lowering matrix shape:", lowering_shape)
-    resol_lowering = lowering_shape[0]*lowering_shape[1]
-    resol_feature = m_shape[0]*m_shape[1]*count_channels
-    # resol_feature = m_shape[0]*m_shape[1] # without channels
-
-    # BOUNDS CAL
-    tot_nz_lowering = np.size(lowering_matrix[lowering_matrix != 0.0])
-    tot_nz_feature = np.size(feature_maps[feature_maps != 0.0])
-
-    print("Lowering nnz = %d ,feature map nnz = %d"%(tot_nz_lowering, tot_nz_feature))
-
-    density_lowering = tot_nz_lowering/resol_lowering
-    density_feature = tot_nz_feature/resol_feature
-
-    print (("Density : Feature Map--> [ %f <-> %f ] <--Lowering Matrix ")%(density_feature, density_lowering))
-    
-     
-    Iw = m_shape[1]
-    Ih = m_shape[0]
-
-    # cal_densityBound(Ow,Iw,Ih,Kw,sw,ru, density_lowering, feature_desity_channel, lowering_desity_channel):
-
-    density_bound_mec, density_bound_cscc = cal_densityBound(Ow, Iw, Ih, kw, kh, sw, sh, density_feature, density_lowering, feature_desity_channel, lowering_desity_channel)
-
-
-    print(("The bound (MEC)-(CPO) : %f && The bound (CSCC)-(CPO) : %f")%(density_bound_mec, density_bound_cscc))
-    print('\n-------------\n')
-    return lowering_matrix, tot_nz_feature
-def compare(a, b, encoding="utf8"):
-    if isinstance(a, bytes):
-        a = a.decode(encoding)
-    if isinstance(b, bytes):
-        b = b.decode(encoding)
-    return a == b
-def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
+def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_layers):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
     # predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data}) # n, m, 3
 
     # Only used for InceptionResnetV2
     assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value)
-
-    all_layers = get_DNN_info(sess)
-
-    #for l in all_layers:
-    #    print(l)
-    # exit(0)
 
     input_tensor = 'image:0'
     if models[FLAGS.model_name] == Models.IV3.value:
@@ -543,21 +374,38 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx):
     else:
         predictions = sess.run(softmax_tensor, {input_tensor_name: sess.run(image_data)})
 
+    #p_list = []
+    manager = multiprocessing.Manager()
+    results = manager.dict()
+    #running_tasks = [Process(target=compute_info_all_layers, args=(ilayer, layer, results, sess, input_tensor_name, image_data, current_feature_map)) for ilayer, layer in enumerate(all_layers)]
+    #print(running_tasks)
+    #print('Starting...')
+    #running_tasks[0].start()
 
-    # for layer in all_layers:
-    print(np.shape(all_layers))
-    layer = all_layers[3]
-    print(layer)
-    current_tensor      = sess.graph.get_tensor_by_name(layer.input_tensor_name)
-    current_feature_map = sess.run(current_tensor, {input_tensor_name: image_data})
-    # print(current_feature_map.shape)
-    current_feature_map = np.squeeze(current_feature_map)
-    lowering_matrix, tot_nz_feature = feature_analysis(current_feature_map, layer.padding, layer.Kw ,layer.Kh , layer.Sw, layer.Sh, layer.Ow, layer.Oh )
-    CPO = overlap_cal(lowering_matrix, layer.Kw  ,layer.Kh , layer.Sw, layer.Sh , tot_nz_feature )
-    #exit(0)
+    #print('Joing...')
+    #running_tasks[0].join()
+    #print('Done join')
+    #print(results[0])
+    
+    txt_dir = FLAGS.gen_dir + "CR.txt"
+    CR_txt  = open(txt_dir, "a")
 
-    #relu_conv_tensor = sess.graph.get_tensor_by_name('mixed_' + str(layerID) + '/join:0')
+    f_name   = FLAGS.gen_dir + "density.txt"
+    den_file = open(f_name, 'a')
 
+    for ilayer in range(len(all_layers)):
+        print('Conv Node %d' % ilayer)
+        layer              = all_layers[ilayer]
+        layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+        all_layers[ilayer] = layer_updated
+        print(layer_updated)
+        L = ("%f \t %f \t %f \t %f \t %f\n")%(layer.CPO_cmpRatio, layer.CPS_cmpRatio, layer.MEC_cmpRatio, layer.CSCC_cmpRatio, layer.SparseTen_cmpRatio,)
+        CR_txt.writelines(L)
+        den_file.write('%f\t%f\t%f\n' % (layer.ru, layer.density_bound_mec, layer.density_bound_cscc))
+
+    den_file.close()
+    CR_txt.close()
+    
     return 1
 
 def construct_qf_list():
@@ -625,7 +473,7 @@ def readImageBatch(startBatch, endBatch, qf_list):
             current_jpeg_image      = org_image_dir + '/shard-' + str(shard_num) + '/' +  str(folder_num) + '/' + 'ILSVRC2012_val_' + imgID + '.JPEG'
             #current_jpeg_image      = '/home/h2amer/work/workspace/ML_TS/training_original/shard-9/944/n02834397_3465.JPEG'
             image_data              = readImage(current_jpeg_image)
-            
+
             if models[FLAGS.model_name] == Models.inceptionresnetv2.value:
                 img_batch               = image_data
             else:
@@ -674,7 +522,10 @@ def readAndPredictOptimizedImageByImage():
             softmax_tensor = sess.graph.get_tensor_by_name(final_tensor_names[FLAGS.model_name])
             print('New session group has been created')
 
-               
+        # Get the DNN info for all layers at the start
+        if actual_idx == FLAGS.START:
+            all_layers_info = get_DNN_info(sess)
+
         if original_img_ID < 0: ## till 48000 shoule generate again
             continue
        
@@ -683,18 +534,22 @@ def readAndPredictOptimizedImageByImage():
             shard_num = math.ceil(original_img_ID/10000) -1 
             folder_num = math.ceil(original_img_ID/1000) 
 
-            
+            # Get the DNN info for all layers
+            all_layers_info = get_DNN_info(sess)
+
             if FLAGS.select == CodeMode.getCodeName(1): # Org
                 qf_idx     =  0
                 qf         = 110
                 current_jpeg_image      = org_image_dir + '/shard-' +str(shard_num) + '/' +  str(folder_num) + '/' + 'ILSVRC2012_val_' + imgID + '.JPEG'
                 
+                # Print the path to image
+                print('\t\t\t\t\t%s' % current_jpeg_image)
                 if (FLAGS.model_name == Models.inceptionresnetv2.value):
                     image_data = tf.read_file(current_jpeg_image)
                     image_data = tf.image.decode_jpeg(image_data, channels=3)
                 else:
                     image_data = tf.gfile.FastGFile(current_jpeg_image, 'rb').read()
-                run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx)
+                run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx, all_layers_info)
             
             else:
                 for qf_idx, qf in enumerate(qf_list) :
@@ -705,7 +560,7 @@ def readAndPredictOptimizedImageByImage():
                     
                     image_data = tf.read_file(current_jpeg_image)
                     image_data = tf.image.decode_jpeg(image_data, channels=3)
-                    run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx)
+                    run_predictionsImage(sess, image_data, softmax_tensor, actual_idx, qf_idx, all_layers_info)
 
         if (actual_idx) % 50 == 0:
                 tf.reset_default_graph()
@@ -786,7 +641,7 @@ def ensure_model_name(x):
 
 ############################################################
 # Note this code does nort work for IV4 since its output tensor only takes batch size 1 
-# python3-tf run_inference.py --select Org --model_name IV3
+# python3-tf run_inference.py --select Org --model_name IV3 --END 2
 def main(_):
 
     model_path      =  WORKSPACE_DIR + FLAGS.model_name
@@ -817,14 +672,15 @@ def main(_):
         top1_count, top5_count = readAndPredictOptimizedImageByImage()
     else:
         top1_count, top5_count = readAndPredictLoopOptimized()
-    top1_accuracy = top1_count / num_images *100 
-    top5_accuracy = top5_count / num_images *100 
-    print('top1_accuracy == ', top1_accuracy ,'top5_accuracy == ',  top5_accuracy )
+    #top1_accuracy = top1_count / num_images *100 
+    #top5_accuracy = top5_count / num_images *100 
+    #print('top1_accuracy == ', top1_accuracy ,'top5_accuracy == ',  top5_accuracy )
 
     end = time.time()
 
     elapsedTime = end - start
 
+    print('Done!')
 
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser()  
@@ -863,6 +719,12 @@ if __name__ == '__main__':
       default='IV3',  
       help='model name'  
   )
+    parser.add_argument(
+      '--gen_dir',
+      type=str,
+      default='../gen/',
+      help='generated directory'
+  )
 
     parser.add_argument(  
       '--batch_size',  
@@ -871,8 +733,6 @@ if __name__ == '__main__':
       help='Recommended batch size is 100, so set it to 10 if you are running All CodeMode'  
   )
 
-    FLAGS, unparsed = parser.parse_known_args()  
-
+    FLAGS, unparsed = parser.parse_known_args()
 
 tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)  
-

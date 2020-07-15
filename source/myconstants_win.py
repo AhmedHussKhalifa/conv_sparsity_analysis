@@ -1,20 +1,16 @@
 
 # Put all our constants here
 
-org_image_dir      = '/home/h2amer/work/workspace/ML_TS/validation_original'
-image_dir          = '/media/h2amer/MULTICOM-104/Customized_validation/validation_generated_QF_1'
-WORKSPACE_DIR      = '/home/h2amer/work/workspace/space_complexity_analysis/'
-MODEL_PATH         =  WORKSPACE_DIR + 'util/frozen_graphs/'
+# org_image_dir      = '/home/h2amer/work/workspace/ML_TS/validation_original'
+# image_dir          = '/media/h2amer/MULTICOM-104/Customized_validation/validation_generated_QF_1'
+# WORKSPACE_DIR      = '/home/h2amer/work/workspace/space_complexity_analysis/'
+# MODEL_PATH         =  WORKSPACE_DIR + 'util/frozen_graphs/'
 
-
-conv_methods         = {'CPO'   :        1,
-                        'CPS'   :        2,
-                        'MEC'   :        3,
-                        'CSCC'  :        4,
-                        'SparseTensor':  5,
-                        'Im2Col':        6
-
-                        }
+org_image_dir      = 'D:\\### PhD Codes ###\\valdiation_orginal'
+image_dir          = 'D:\\### PhD Codes ###\\validation_generated_QF'
+WORKSPACE_DIR      = 'D:\\### PhD Codes ###\\conv_sparsity_analysis'
+MODELS_DIR         = 'D:\\### PhD Codes ###\\space_complexity_analysis'
+MODEL_PATH         =  MODELS_DIR + 'util\\frozen_graphs\\'
 
 
 models             = {  'IV1':         1,
