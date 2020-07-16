@@ -3,9 +3,16 @@ import numpy as np
 import sys
 import argparse
 from myconstants import *
-# import pandas as pd
 import matplotlib.pyplot as plt
 from sparsity_method_types import SparsityMethodTypes
+
+
+# cmaps['Miscellaneous'] = [
+#             'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+#             'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
+#             'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar']
+
+# for More colors https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
 
 
 def preprocessing(CR_txt, Density_txt, Modules_txt):    
@@ -75,28 +82,28 @@ def plot_bars(modules, CR, method, plots_dir):
         x = np.array(modules[mod][:])
         buff = CR[:, x ]
         # print(buff.shape)
-        fig = plt.figure()
+        plt.figure()
         # Set position of bar on X axis
         r = []
         r.append(np.arange(buff.shape[1]))
         for i in range(1,buff.shape[0]):
             bar = [(x + barWidth) for x in r[i-1][:]]
             r.append(bar)
-        fig.suptitle(method+" - mixed - %d"%abs(mod), fontsize=14)
+        plt.suptitle(method+" - mixed - %d"%abs(mod), fontsize=14)
         for i in range(0,buff.shape[0]):
             # print(md*(i+1))
             plt.bar(r[i][:], buff[i,:], facecolor=cmap(i), width=barWidth, edgecolor='white', label=SparsityMethodTypes.getModelByValue(md*(i+1)))
 
-        plt.xlabel('convolutions', fontweight='bold')
+        plt.xlabel('Convolutions', fontweight='bold')
         plt.ylabel(method, fontweight='bold')
         convs = []
         for idx in range(0,len(modules[mod])):
             convs.append(("%d")%(idx+1))
         plt.xticks([r + barWidth for r in range(len(r[0][:]))], convs)
         plt.legend(prop={'size': 6})
-        fig.savefig(plots_dir+method+' - mixed_%d.png'%mod, dpi= 600)
+        plt.savefig(plots_dir+method+' - mixed_%d.png'%mod, dpi= 600)
         # fig.close()
-    return fig
+    return 1
 
 
 
