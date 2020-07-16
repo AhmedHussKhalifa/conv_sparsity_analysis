@@ -100,7 +100,7 @@ def get_DNN_info(sess):
     return all_layers
 
 
-def (all_layers):
+def get_DNN_modules(all_layers):
     txt_dir = FLAGS.gen_dir + "Modules.txt"
     mixed_txt = open(txt_dir, 'a')
     tmp = np.empty(0,int)
@@ -579,7 +579,7 @@ def readAndPredictOptimizedImageByImage():
             
             # # Get the moules info for all layers
             # print("get module names")
-            # get_DNN_moules(all_layers_info)
+            # get_DNN_modules(all_layers_info)
             # exit(0)
 
             if FLAGS.select == CodeMode.getCodeName(1): # Org
