@@ -66,7 +66,6 @@ def get_cmap(n, name='rainbow'):
 
 def plot_all_images(modules, CR, method, plots_dir):
     cmap = get_cmap(CR.shape[0])
-    print(CR.shape)
     # set width of bar
     barWidth = 0.1
     img_num = CR.shape[1]/94
@@ -77,8 +76,8 @@ def plot_all_images(modules, CR, method, plots_dir):
     elif (method is "Bounds"):
         print("Running method is BO")
         md = 10
-    # for img_idx in range(0,CR.shape[1],conv_num):
-    for img_idx in range(0,3*conv_num,conv_num):
+    for img_idx in range(0,CR.shape[1]+conv_nu,conv_num):
+    # for img_idx in range(0,3*conv_num,conv_num):
         for mod in range(0,np.shape(modules)[0]):
             x = img_idx + np.array(modules[mod][:])
             # print(x)
@@ -107,18 +106,136 @@ def plot_all_images(modules, CR, method, plots_dir):
         # fig.close()
     return 1
 
+def plot_bar_conv(modules, CR, method, plots_dir):
+    cmap = get_cmap(CR.shape[0])
+    # set width of bar
+    barWidth = 0.1
+    img_num = CR.shape[1]/94
+    conv_num = 94
+    if ("CRs" in method):
+        print("Running method is CR")
+        md = 1
+    elif ("Bounds" in method):
+        print("Running method is BO")
+        md = 10
+    for mod in range(0,np.shape(modules)[0]):
+        x =  np.array(modules[mod][:])
+        # print(x)
+        buff = CR[:, x ]
+        # print(buff.shape)
+        plt.figure()
+        # Set position of bar on X axis
+        r = []
+        r.append(np.arange(buff.shape[1]))
+        for i in range(1,buff.shape[0]):
+            bar = [(x + barWidth) for x in r[i-1][:]]
+            r.append(bar)
+        plt.suptitle(method+" - mixed - %d"%abs(mod), fontsize=14)
+        for i in range(0,buff.shape[0]):
+            # print(md*(i+1))
+            plt.bar(r[i][:], buff[i,:], facecolor=cmap(i), width=barWidth, edgecolor='white', label=SparsityMethodTypes.getModelByValue(md*(i+1)))
 
+        plt.xlabel('Convolutions', fontweight='bold')
+        plt.ylabel(method, fontweight='bold')
+        convs = []
+        for idx in range(0,len(modules[mod])):
+            convs.append(("%d")%(idx+1))
+        plt.xticks([r + barWidth for r in range(len(r[0][:]))], convs)
+        plt.legend(prop={'size': 6})
+        plt.savefig(plots_dir+method+' - mixed_%d.png'%(mod), dpi= 600)
+        # fig.close()
+    return 1
+
+def plot_bar_mixed(CR, method, plots_dir):
+    cmap = get_cmap(CR.shape[0])
+    # set width of bar
+    barWidth = 0.1
+    img_num = CR.shape[1]/94
+    conv_num = 94
+    if ("CRs" in method):
+        print("Running method is CR")
+        md = 1
+    elif ("Bounds" in method):
+        print("Running method is BO")
+        md = 10
+
+    plt.figure()
+    # Set position of bar on X axis
+    r = []
+    r.append(np.arange(CR.shape[1]))
+    for i in range(1,CR.shape[0]):
+        bar = [(x + barWidth) for x in r[i-1][:]]
+        r.append(bar)
+    plt.suptitle(method, fontsize=14)
+    for i in range(0,CR.shape[0]):
+        # print(md*(i+1))
+        plt.bar(r[i][:], CR[i,:], facecolor=cmap(i), width=barWidth, edgecolor='white', label=SparsityMethodTypes.getModelByValue(md*(i+1)))
+
+    plt.xlabel('MIXED', fontweight='bold')
+    plt.ylabel(method, fontweight='bold')
+    convs = []
+    for idx in range(0,CR.shape[1]):
+        convs.append(("%d")%(idx+1))
+    plt.xticks([r + barWidth for r in range(len(r[0][:]))], convs)
+    plt.legend(prop={'size': 6})
+    plt.savefig(plots_dir+method+' - mixed.png', dpi= 600)
+        # fig.close()
+    return 1
+
+
+def get_avg_conv(modules, CR):
+    img_num = CR.shape[1]/94
+    conv_num = 94
+    tmp = np.empty((CR.shape[0],conv_num,0),float)
+    for img_idx in range(0,CR.shape[1],conv_num):
+        r = CR[:,img_idx:img_idx+conv_num]
+        r = np.expand_dims(r, axis=2)
+        tmp = np.append(tmp, r, axis = 2)
+        # print(r.shape)
+
+    CR_avg = np.mean(tmp, axis=2)
+    print("The Average Matrix over CONV Shape : ",CR_avg.shape)
+    return CR_avg
+
+def get_avg_mixed(modules, CR):
+    img_num = CR.shape[1]/94
+    conv_num = 94
+    mixed_avg = np.empty((CR.shape[0],0), float)
+    for mod in range(0,np.shape(modules)[0]):
+        x = np.array(modules[mod][:])
+        buff = np.expand_dims(np.mean(CR[:, x ], axis = 1), axis = 1)
+        mixed_avg = np.append(mixed_avg, buff, axis = 1)
+        # print(mixed_avg.shape)
+
+    print("The Average Matrix over Mixed Shape : ",mixed_avg.shape)
+    return mixed_avg
 
 
 
 def main():
-    CR_txt        = FLAGS.gen_dir + "CR.txt" # compression Ratio (MEC/CSCC/CPO/CPS/SpareTensor)/Im2col
-    Density_txt   = FLAGS.gen_dir + "density.txt"
-    Modules_txt   = FLAGS.gen_dir + "Modules.txt"
-    plots_dir     = FLAGS.plot_dir
+    CR_txt               = FLAGS.gen_dir + "CR.txt" # compression Ratio (MEC/CSCC/CPO/CPS/SpareTensor)/Im2col
+    Density_txt          = FLAGS.gen_dir + "density.txt"
+    Modules_txt          = FLAGS.gen_dir + "Modules.txt"
+    plots_dir            = FLAGS.plot_dir
+    
     modules, CR, Density = preprocessing(CR_txt, Density_txt, Modules_txt)
-    fig = plot_bars(modules, CR, "CRs", plots_dir)
-    fig = plot_bars(modules, Density, "Bounds", plots_dir)
+    
+    CR_avg               = get_avg_conv(modules, CR)
+    BO_avg               = get_avg_conv(modules, Density)
+    
+    CR_avg_mixed         = get_avg_mixed(modules, CR_avg)
+    BO_avg_mixed         = get_avg_mixed(modules, BO_avg)
+    
+    plot_bar_mixed(CR_avg_mixed, "AvgMixed-CRs", plots_dir)
+    plot_bar_mixed(BO_avg_mixed, "AvgMixed-Bounds", plots_dir)
+
+    # plot_bar_conv(modules, CR_avg, "AvgConv-CRs", plots_dir)
+    # plot_bar_conv(modules, BO_avg, "AvgConv-Bounds", plots_dir)
+
+
+    # plot_all_images(modules, CR, "CRs", plots_dir)
+    # plot_all_images(modules, Density, "Bounds", plots_dir)
+    
     # fig.show()
 
     # plot_bars(modules, Density)
