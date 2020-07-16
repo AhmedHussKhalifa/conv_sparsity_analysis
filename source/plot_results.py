@@ -64,7 +64,7 @@ def get_cmap(n, name='rainbow'):
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
     return plt.cm.get_cmap(name, n)
 
-def plot_bars(modules, CR, method, plots_dir):
+def plot_all_images(modules, CR, method, plots_dir):
     cmap = get_cmap(CR.shape[0])
     print(CR.shape)
     # set width of bar
@@ -78,30 +78,32 @@ def plot_bars(modules, CR, method, plots_dir):
         print("Running method is BO")
         md = 10
     # for img_idx in range(0,CR.shape[1],conv_num):
-    for mod in range(0,np.shape(modules)[0]):
-        x = np.array(modules[mod][:])
-        buff = CR[:, x ]
-        # print(buff.shape)
-        plt.figure()
-        # Set position of bar on X axis
-        r = []
-        r.append(np.arange(buff.shape[1]))
-        for i in range(1,buff.shape[0]):
-            bar = [(x + barWidth) for x in r[i-1][:]]
-            r.append(bar)
-        plt.suptitle(method+" - mixed - %d"%abs(mod), fontsize=14)
-        for i in range(0,buff.shape[0]):
-            # print(md*(i+1))
-            plt.bar(r[i][:], buff[i,:], facecolor=cmap(i), width=barWidth, edgecolor='white', label=SparsityMethodTypes.getModelByValue(md*(i+1)))
+    for img_idx in range(0,3*conv_num,conv_num):
+        for mod in range(0,np.shape(modules)[0]):
+            x = img_idx + np.array(modules[mod][:])
+            # print(x)
+            buff = CR[:, x ]
+            # print(buff.shape)
+            plt.figure()
+            # Set position of bar on X axis
+            r = []
+            r.append(np.arange(buff.shape[1]))
+            for i in range(1,buff.shape[0]):
+                bar = [(x + barWidth) for x in r[i-1][:]]
+                r.append(bar)
+            plt.suptitle(method+" - mixed - %d"%abs(mod), fontsize=14)
+            for i in range(0,buff.shape[0]):
+                # print(md*(i+1))
+                plt.bar(r[i][:], buff[i,:], facecolor=cmap(i), width=barWidth, edgecolor='white', label=SparsityMethodTypes.getModelByValue(md*(i+1)))
 
-        plt.xlabel('Convolutions', fontweight='bold')
-        plt.ylabel(method, fontweight='bold')
-        convs = []
-        for idx in range(0,len(modules[mod])):
-            convs.append(("%d")%(idx+1))
-        plt.xticks([r + barWidth for r in range(len(r[0][:]))], convs)
-        plt.legend(prop={'size': 6})
-        plt.savefig(plots_dir+method+' - mixed_%d.png'%mod, dpi= 600)
+            plt.xlabel('Convolutions', fontweight='bold')
+            plt.ylabel(method, fontweight='bold')
+            convs = []
+            for idx in range(0,len(modules[mod])):
+                convs.append(("%d")%(idx+1))
+            plt.xticks([r + barWidth for r in range(len(r[0][:]))], convs)
+            plt.legend(prop={'size': 6})
+            plt.savefig(plots_dir+method+' - ImgID %d - mixed_%d.png'%((img_idx/94)+1 ,mod), dpi= 600)
         # fig.close()
     return 1
 
