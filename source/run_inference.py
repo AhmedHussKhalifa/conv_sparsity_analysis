@@ -42,7 +42,7 @@ from myconstants import *
 # Import process
 import multiprocessing
 from multiprocessing import Process
-
+import subprocess
 
 def create_graph(): 
     with tf.gfile.FastGFile(MODEL_PATH + Frozen_Graph[FLAGS.model_name], 'rb') as f: 
@@ -126,6 +126,47 @@ def get_DNN_modules(all_layers):
     mixed_txt.close()
     return 1
 
+def get_DNN_for_modules(all_layers):
+    Modules_txt    = FLAGS.gen_dir + "Modules.txt"
+    Density_txt    = FLAGS.gen_dir + "density.txt"
+    txt_dir        = FLAGS.gen_dir + "layer_info.txt"
+    LayerInfo_txt = open(txt_dir, 'a')
+    conv_num = 94
+    ru = ru_bound_mec = ru_bound_cscc = np.empty(0,float)
+    module = []
+    with open(Modules_txt, 'r') as input:
+       for line in input:
+            x = line.split()
+            x = [int(i) for i in x] 
+            module.append(x)
+    with open(Density_txt, 'r') as input:
+       for line in input:
+            ru = np.append(ru, float(line.split()[0]))
+            ru_bound_mec = np.append(ru_bound_mec, float(line.split()[1]))
+            ru_bound_cscc = np.append(ru_bound_cscc, float(line.split()[2]))
+    print("ru shape :",ru.shape)
+
+    for ru_idx in range(0,2):
+        H = ('\n\t\t\t\t#=-=-=-=# ImgID %d =-=-=-=#\n'%(ru_idx))
+        LayerInfo_txt.writelines(H)
+        for i in range(np.shape(module)[0]):
+            s = ('\n\t\t\t\t#=-=-=-= Mixed %d =-=-=-=#\n'%(i))
+            for j in range(0,len(module[i][:])):
+                s = s + ('\n\t\t\t\t=-=-=-= CONV - %d =-=-=-= \n'%(module[i][j]))
+                layer = all_layers[module[i][j]]
+                s = s + ('%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\n' %
+                        (
+                        layer.Ih, layer.Iw, \
+                        layer.Kh, layer.Kw, \
+                        layer.Sh, layer.Sw, \
+                        ru[ru_idx*conv_num+module[i][j]], \
+                        ru_bound_mec[ru_idx*conv_num+module[i][j]], \
+                        ru_bound_cscc[ru_idx*conv_num+module[i][j]]
+                        )
+                        )
+            LayerInfo_txt.writelines(s)
+    LayerInfo_txt.close()
+    return 1
 # ---- 
 
 def print_tensors(sess):
@@ -421,6 +462,8 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
 
     f_name   = FLAGS.gen_dir + "density.txt"
 
+    # subprocess.call(['./clearTxtFiles.sh'])
+    
     den_file = open(f_name, 'a')
     CR_txt  = open(txt_dir, 'a')
     
@@ -582,6 +625,9 @@ def readAndPredictOptimizedImageByImage():
             # get_DNN_modules(all_layers_info)
             # exit(0)
 
+            get_DNN_for_modules(all_layers_info)
+            exit(0)
+            
             if FLAGS.select == CodeMode.getCodeName(1): # Org
                 qf_idx     =  0
                 qf         = 110
