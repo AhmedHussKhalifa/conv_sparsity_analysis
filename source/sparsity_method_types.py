@@ -11,6 +11,10 @@ class SparsityMethodTypes(enum.Enum):
     SparseTensor     = 5
     Im2Col           = 6
 
+    Org_Density      = 10
+    Bound_MEC        = 20
+    Bound_CSCC       = 30
+
     def getModelByValue(val):
         return SparsityMethodTypes(val).name
 

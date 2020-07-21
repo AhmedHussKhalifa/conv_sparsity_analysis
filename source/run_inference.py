@@ -42,7 +42,7 @@ from myconstants import *
 # Import process
 import multiprocessing
 from multiprocessing import Process
-
+import subprocess
 
 def create_graph(): 
     with tf.gfile.FastGFile(MODEL_PATH + Frozen_Graph[FLAGS.model_name], 'rb') as f: 
@@ -98,7 +98,75 @@ def get_DNN_info(sess):
             print('%s is an Op.' % n.name)
 
     return all_layers
+
+
+def get_DNN_modules(all_layers):
+    txt_dir = FLAGS.gen_dir + "Modules.txt"
+    mixed_txt = open(txt_dir, 'a')
+    tmp = np.empty(0,int)
+    for ilayer in range(len(all_layers)):
+        if "mixed" not in all_layers[ilayer].output_tensor_name:
+                tmp = np.append(tmp, [ilayer], axis = 0)
     
+    mixed_txt.write(str(tmp)+'\n')
+    tmp = np.empty(0,int)
+    
+    for ilayer in range(len(all_layers)):
+        if "mixed" in all_layers[ilayer].output_tensor_name:
+                tmp = np.append(tmp, [ilayer], axis = 0)
+    
+    mixed_txt.write(str(tmp)+'\n')        
+    
+    for mixed_count in range(1,11):
+        tmp = np.empty(0,int)
+        for ilayer in range(len(all_layers)):
+            if (("mixed_%d")%mixed_count) in all_layers[ilayer].output_tensor_name:
+                tmp = np.append(tmp, [ilayer], axis = 0)
+        mixed_txt.write(str(tmp)+'\n')
+    mixed_txt.close()
+    return 1
+
+def get_DNN_for_modules(all_layers):
+    Modules_txt    = FLAGS.gen_dir + "Modules.txt"
+    Density_txt    = FLAGS.gen_dir + "density.txt"
+    txt_dir        = FLAGS.gen_dir + "layer_info.txt"
+    LayerInfo_txt = open(txt_dir, 'a')
+    conv_num = 94
+    ru = ru_bound_mec = ru_bound_cscc = np.empty(0,float)
+    module = []
+    with open(Modules_txt, 'r') as input:
+       for line in input:
+            x = line.split()
+            x = [int(i) for i in x] 
+            module.append(x)
+    with open(Density_txt, 'r') as input:
+       for line in input:
+            ru = np.append(ru, float(line.split()[0]))
+            ru_bound_mec = np.append(ru_bound_mec, float(line.split()[1]))
+            ru_bound_cscc = np.append(ru_bound_cscc, float(line.split()[2]))
+    print("ru shape :",ru.shape)
+
+    for ru_idx in range(0,2):
+        H = ('\n\t\t\t\t#=-=-=-=# ImgID %d =-=-=-=#\n'%(ru_idx))
+        LayerInfo_txt.writelines(H)
+        for i in range(np.shape(module)[0]):
+            s = ('\n\t\t\t\t#=-=-=-= Mixed %d =-=-=-=#\n'%(i))
+            for j in range(0,len(module[i][:])):
+                s = s + ('\n\t\t\t\t=-=-=-= CONV - %d =-=-=-= \n'%(module[i][j]))
+                layer = all_layers[module[i][j]]
+                s = s + ('%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\n' %
+                        (
+                        layer.Ih, layer.Iw, \
+                        layer.Kh, layer.Kw, \
+                        layer.Sh, layer.Sw, \
+                        ru[ru_idx*conv_num+module[i][j]], \
+                        ru_bound_mec[ru_idx*conv_num+module[i][j]], \
+                        ru_bound_cscc[ru_idx*conv_num+module[i][j]]
+                        )
+                        )
+            LayerInfo_txt.writelines(s)
+    LayerInfo_txt.close()
+    return 1
 # ---- 
 
 def print_tensors(sess):
@@ -289,14 +357,16 @@ def patterns_cal(feature_maps, layer):
         for i in range(0,feature_maps.shape[1]):
             for j in range(0, (math.floor(feature_maps.shape[0]/layer.pattern_width)*layer.pattern_width), layer.pattern_width):
                 catched_pattern = feature_maps[range(j,j+layer.pattern_width),i,channel]
-                pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+                pattern_seq = np.size(catched_pattern[catched_pattern != 0.0])
+                # pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
                 nnz_pattern = nnz_pattern + pattern_seq
                 if (pattern_seq>0.0):
                     patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1            
             remain = range((math.floor(feature_maps.shape[0]/layer.pattern_width)*layer.pattern_width) 
                             ,(feature_maps.shape[0]))
             catched_pattern = feature_maps[remain, i , channel]
-            pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
+            pattern_seq = np.size(catched_pattern[catched_pattern != 0.0])
+            # pattern_seq = np.size(catched_pattern[np.invert(np.isclose(np.zeros(len(catched_pattern)), catched_pattern, rtol = 1e-7, atol=1e-7)) == True])
             nnz_pattern = nnz_pattern + pattern_seq
             if ((pattern_seq > 0.0) & (pattern_seq == 3.0)):
                 patterns[pattern_seq-1] = patterns[pattern_seq-1] + 1
@@ -317,7 +387,8 @@ def patterns_cal(feature_maps, layer):
     for p in range(1,len(patterns)):
         layer.patterns_sum = layer.patterns_sum + 2*patterns[p]
 
-    if (tot_pattern != layer.tot_nz_feature):
+    # if (tot_pattern != layer.tot_nz_feature):
+    if (nnz_pattern != layer.tot_nz_feature):
         print("Total Number of NNZ elements from the patterns: %d"%nnz_pattern)
         print("Total Number of Non-Zero of the feature : %d"%layer.tot_nz_feature)
         print("ERROR: missing some patterns")
@@ -388,12 +459,17 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
     #print(results[0])
     
     txt_dir = FLAGS.gen_dir + "CR.txt"
-    CR_txt  = open(txt_dir, "a")
 
     f_name   = FLAGS.gen_dir + "density.txt"
-    den_file = open(f_name, 'a')
 
+    # subprocess.call(['./clearTxtFiles.sh'])
+    
+    den_file = open(f_name, 'a')
+    CR_txt  = open(txt_dir, 'a')
+    
     for ilayer in range(len(all_layers)):
+    # for ilayer in np.array([24,25,26,27]):
+        # ilayer = 25    
         print('Conv Node %d' % ilayer)
         layer              = all_layers[ilayer]
         layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
@@ -403,9 +479,16 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
         CR_txt.writelines(L)
         den_file.write('%f\t%f\t%f\n' % (layer.ru, layer.density_bound_mec, layer.density_bound_cscc))
 
+        if (idx%5==0):
+            print("IMAGE ID : %d"%idx)
+            den_file.close()
+            CR_txt.close()
+            den_file = open(f_name, 'a')
+            CR_txt  = open(txt_dir, 'a')
+
+
     den_file.close()
     CR_txt.close()
-    
     return 1
 
 def construct_qf_list():
@@ -536,7 +619,15 @@ def readAndPredictOptimizedImageByImage():
 
             # Get the DNN info for all layers
             all_layers_info = get_DNN_info(sess)
+            
+            # # Get the moules info for all layers
+            # print("get module names")
+            # get_DNN_modules(all_layers_info)
+            # exit(0)
 
+            get_DNN_for_modules(all_layers_info)
+            exit(0)
+            
             if FLAGS.select == CodeMode.getCodeName(1): # Org
                 qf_idx     =  0
                 qf         = 110
