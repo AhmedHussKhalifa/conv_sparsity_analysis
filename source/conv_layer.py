@@ -166,7 +166,13 @@ class Conv_Layer(object):
     self.feature_desity_count   = 0
     self.both_feature_lowering  = 0
     #############################################
-    if ((self.Kw>1) or (self.Kh>1)):
+    if ((self.Kw == 1)):
+      for idx in range(self.last_channel_cal):
+        m_f = feature_maps[:, :, idx]  
+        sub_tmp     = m_f.transpose()
+        lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
+
+    else:
       for idx in range(self.last_channel_cal):
         m_f = feature_maps[:, :, idx]  
         # Here we creates the lowering Matrix for MEC and CSCC
@@ -193,8 +199,6 @@ class Conv_Layer(object):
         else:
           self.both_feature_lowering = self.both_feature_lowering + 1
           # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
-    else:
-      lowering_matrix     = feature_maps.transpose()
 
     return lowering_matrix
 
