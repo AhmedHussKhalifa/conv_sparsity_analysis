@@ -238,7 +238,8 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 5):
                 sess = tf.Session(config=config)
                 create_graph()
 
-            #print('i-', ic, ' ru: ' , old_conv_layer.ru, ' ru2: ', old_conv_layer.lowering_density, ' sum1: ', all_layers[ic].ru, ' sum2: ', all_layers[ic].lowering_density)
+            #print('i-', ic, ' ', input_tensor_list[ic], 
+            #        ' ru: ' , old_conv_layer.ru, ' ru2: ', old_conv_layer.lowering_density, ' sum1: ', all_layers[ic].ru, ' sum2: ', all_layers[ic].lowering_density)
         
         # Reset the session
         config = tf.ConfigProto(device_count = {'GPU': 0})
@@ -254,11 +255,11 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 5):
         all_layers[ilayer].lowering_density = all_layers[ilayer].lowering_density/n_images
 
         current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
-                (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw, conv_layer.Oh, conv_layer.Ow,
-                    conv_layer.Kh, conv_layer.Kw,
-                    conv_layer.Sh, conv_layer.Sw,
-                    conv_layer.Ic, conv_layer.K,
-                    conv_layer.ru, conv_layer.lowering_density))
+                (layer.input_tensor_name, layer.output_tensor_name, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
+                    layer.Kh, layer.Kw,
+                    layer.Sh, layer.Sw,
+                    layer.Ic, layer.K,
+                    layer.ru, layer.lowering_density))
         info_file.write(current_string)
         print(current_string)
 
