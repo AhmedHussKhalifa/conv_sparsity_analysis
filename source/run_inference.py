@@ -9,11 +9,14 @@ import os
 import time
 
 
+
+
 # Excel sheet stuff:
 import xlrd
 from xlwt import *
 from xlutils.copy import copy
 
+import copy
 import cv2
 import math 
 import glob 
@@ -52,8 +55,45 @@ def create_graph():
         tf.import_graph_def(graph_def, name='')
 
 
+# Gets image data for different DNNs
+def get_image_data(first_jpeg_image):
+    if FLAGS.model_name  == 'InceptionResnetV2':
+        image_data = tf.read_file(first_jpeg_image)
+        image_data = tf.image.decode_jpeg(image_date, channels=3)
+    elif FLAGS.model_name == 'IV3':
+        image_data = tf.gfile.FastGFile(first_jpeg_image, 'rb').read()
+    elif FLAGS.model_name == 'AlexNet':
+        imagenet_mean = np.array([104., 117., 124.], dtype=np.float32)
+        img           = cv2.imread(first_jpeg_image)
+        img           = cv2.resize(img.astype(np.float32), (resized_dimention[FLAGS.model_name], resized_dimention[FLAGS.model_name]))
+        img          -= imagenet_mean
+        image_data    = img.reshape((1, resized_dimention[FLAGS.model_name], resized_dimention[FLAGS.model_name], 3))
+
+    else:
+         image_data              = readImage(first_jpeg_image)
+
+    return image_data
+
+
+# Runs the DNN for analysis 
+def run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, image_data):
+    if FLAGS.model_name  == 'InceptionResnetV2' or  FLAGS.model_name == 'IV3':
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])],
+            {first_input_tensor[0]: image_data})
+    elif FLAGS.model_name  == 'MobileNetV2':
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])],
+            {"input:0": sess.run(image_data)})
+    elif FLAGS.model_name == 'AlexNet':
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])],
+            {"Placeholder:0": image_data, 'Placeholder_1:0': 1})
+    else:
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])]
+       , {first_input_tensor[0]: sess.run(image_data)})
+    return current_feature_map, input_to_feature_map
+
+
 # python3-tf run_inference.py --select Org --model_name IV1 --END 2
-def get_DNN_info_general(sess, first_jpeg_image):
+def get_DNN_info_general(sess, first_jpeg_image, n_images = 5):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
    
@@ -125,37 +165,18 @@ def get_DNN_info_general(sess, first_jpeg_image):
     info_file = open(txt_file, 'w')
     current_string = ('====input_tensor_name\toutput_tensor_name\tIh\tIw\tOh\tOw\tKh\tKw\tSh\tSw\tIc\tK\tru\tlowering_density====\n')
     info_file.write(current_string)
+    
+    print('Fetched Primary information about DNN...')
 
+    # Loop through convolutions to get the conv dimensions
     for ic, c in enumerate(conv_tensor_list):
-
-        if FLAGS.model_name  == 'InceptionResnetV2':
-            image_data = tf.read_file(first_jpeg_image)
-            image_data = tf.image.decode_jpeg(image_date, channels=3)
-        elif FLAGS.model_name == 'IV3':
-            image_data = tf.gfile.FastGFile(first_jpeg_image, 'rb').read()
-        elif FLAGS.model_name == 'AlexNet':
-            imagenet_mean = np.array([104., 117., 124.], dtype=np.float32)
-            img           = cv2.imread(first_jpeg_image)
-            img           = cv2.resize(img.astype(np.float32), (resized_dimention[FLAGS.model_name], resized_dimention[FLAGS.model_name]))
-            img          -= imagenet_mean
-            image_data    = img.reshape((1, resized_dimention[FLAGS.model_name], resized_dimention[FLAGS.model_name], 3))
-
-        else:
-            image_data              = readImage(first_jpeg_image)
-      
-        if FLAGS.model_name  == 'InceptionResnetV2' or  FLAGS.model_name == 'IV3':
-            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
-                    {first_input_tensor[0]: image_data})
-        elif FLAGS.model_name  == 'MobileNetV2':
-            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
-                    {"input:0": sess.run(image_data)})
-        elif FLAGS.model_name == 'AlexNet':
-            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])],
-                    {"Placeholder:0": image_data, 'Placeholder_1:0': 1})
-        else:
-           current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])]
-               , {first_input_tensor[0]: sess.run(image_data)})
-
+        
+        # Get image data
+        image_data = get_image_data(first_jpeg_image)
+        
+        # Run the first image
+        current_feature_map, input_to_feature_map = run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, image_data)
+        
         _, Oh, Ow, _   = current_feature_map.shape
         In, Ih, Iw, Ic = input_to_feature_map.shape
         K, Kh, Kw,     = k_tensor_list[ic], kh_tensor_list[ic], kw_tensor_list[ic]
@@ -164,14 +185,7 @@ def get_DNN_info_general(sess, first_jpeg_image):
 
         input_tensor_name  = input_tensor_list[ic]
         output_tensor_name = c.name 
-
-        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n' %
-                (input_tensor_name, output_tensor_name, Ih, Iw, Oh, Ow,
-                 Kh, Kw,
-                 Sh, Sw,
-                 Ic, K,
-                 padding_type))
-        print(current_string)
+        
         # Create the conv_layer
         conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In, padding=padding_type)
         conv_layer.padding_cal()
@@ -181,28 +195,79 @@ def get_DNN_info_general(sess, first_jpeg_image):
 
         #print('********* PADDING TYPE ', conv_layer.padding, ' PADDINGS: ' , conv_layer.paddings, ' Input: ', input_tensor_name, ' out: ', output_tensor_name,
         #        ' Ih: ', conv_layer.Ih)
-        #feature_maps        = conv_layer.image_padding(np.squeeze(input_to_feature_map))
-
-        # Write in text file
-        txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
-        info_file = open(txt_file, 'a')
-        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
-                (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw, conv_layer.Oh, conv_layer.Ow,
-                 conv_layer.Kh, conv_layer.Kw,
-                 conv_layer.Sh, conv_layer.Sw,
-                 conv_layer.Ic, conv_layer.K,
-                 conv_layer.ru, conv_layer.lowering_density))
-        info_file.write(current_string)
-        print(current_string)
-
-        if conv_layer.ru > 1:
-            print('Greather than 1!!')
-            exit(0)
-
+        
         # Get all layers
         all_layers.append(conv_layer)
 
+        print('Analyzed Conv Node %d' % ic)
+
     
+    print('Reset the session')
+    config = tf.ConfigProto(device_count = {'GPU': 0})
+    sess = tf.Session(config=config)
+    create_graph()
+    # Loop through images to get the average density for images:
+    for imgID in range(2, n_images):
+        current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
+        image_data = get_image_data(current_jpeg_image)
+        
+        print(current_jpeg_image)
+
+        # Loop through all convs in the model to update their densities:
+        for ic, c in enumerate(conv_tensor_list):
+            
+            # Run the DNN
+            current_feature_map, input_to_feature_map = run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, image_data)
+            
+            # Get the old_conv_layer in a new deep copy
+            old_conv_layer = copy.deepcopy(all_layers[ic])
+            
+            # Calculate the densities of old_conv_layer
+            lowering_matrix                 = old_conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
+
+            # Update the densities to sum
+            all_layers[ic].ru += old_conv_layer.ru
+            all_layers[ic].lowering_density += old_conv_layer.lowering_density
+
+            if not ic % 10:
+                print('Analyzed Conv Node %d' % ic)
+
+            if ic == int(0.25*len(conv_tensor_list)) or ic == int(0.5*len(conv_tensor_list)) or ic == int(0.75*len(conv_tensor_list)):
+                # reset the session:
+                config = tf.ConfigProto(device_count = {'GPU': 0})
+                sess = tf.Session(config=config)
+                create_graph()
+
+            #print('i-', ic, ' ru: ' , old_conv_layer.ru, ' ru2: ', old_conv_layer.lowering_density, ' sum1: ', all_layers[ic].ru, ' sum2: ', all_layers[ic].lowering_density)
+        
+        # Reset the session
+        config = tf.ConfigProto(device_count = {'GPU': 0})
+        sess = tf.Session(config=config)
+        create_graph()
+
+
+    # Get the average density:
+    txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
+    info_file = open(txt_file, 'a')
+    for ilayer, layer in enumerate(all_layers):
+        all_layers[ilayer].ru = all_layers[ilayer].ru/n_images
+        all_layers[ilayer].lowering_density = all_layers[ilayer].lowering_density/n_images
+
+        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
+                (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw, conv_layer.Oh, conv_layer.Ow,
+                    conv_layer.Kh, conv_layer.Kw,
+                    conv_layer.Sh, conv_layer.Sw,
+                    conv_layer.Ic, conv_layer.K,
+                    conv_layer.ru, conv_layer.lowering_density))
+        info_file.write(current_string)
+        print(current_string)
+
+
+    info_file.write('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
+    info_file.close()
+
+
+
     print('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
     print('This code should work without exit.... Done!')
     exit(0)
