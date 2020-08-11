@@ -50,6 +50,140 @@ def create_graph():
         graph_def.ParseFromString(f.read())
         tf.import_graph_def(graph_def, name='')
 
+
+# python3-tf run_inference.py --select Org --model_name IV1 --END 2
+def get_DNN_info_general(sess, first_jpeg_image):
+
+    graph_def = sess.graph.as_graph_def(add_shapes=True)
+
+    all_tensors = [tensor for op in tf.get_default_graph().get_operations() for tensor in op.values()]
+    all_layers  = []
+    input_tensor_list = []
+    conv_tensor_list  = []
+    padding_tensor_list = []
+    sw_tensor_list = []
+    sh_tensor_list = []
+    first_input_tensor = []
+    k_tensor_list  = []
+    kw_tensor_list = []
+    kh_tensor_list = []
+
+    # loop on all nodes in the graph
+    for  nid, n in enumerate(graph_def.node):
+        try:
+           
+            if nid == 0:
+                first_input_tensor.append(n.name + ':0')
+
+            # print(n.name)
+            if 'Conv2D' in n.name and '_bn_' not in n.name:
+
+                output_tensor_name = n.name + ':0'
+                input_tensor_name = n.input[0] + ':0'
+                input_tensor      = sess.graph.get_tensor_by_name(input_tensor_name)
+                input_tensor_list.append(input_tensor_name)
+                conv_tensor_list.append(sess.graph.get_tensor_by_name(output_tensor_name))
+
+
+
+                if 'padding' in n.attr.keys():
+                    padding_type = n.attr['padding'].s.decode(encoding='utf-8')
+                    padding_tensor_list.append(padding_type)
+                if 'strides' in n.attr.keys():
+                    art_tensor_name = n.name + ':0'
+                    strides_list = [int(a) for a in n.attr['strides'].list.i]
+                    Sh           = strides_list[1]
+                    Sw           = strides_list[2]
+                    sh_tensor_list.append(Sh)
+                    sw_tensor_list.append(Sw)
+                
+                conv_tensor_params_name = n.input[1] + ':0'
+                conv_tensor_params      = sess.graph.get_tensor_by_name(conv_tensor_params_name)
+                filter_shape            = conv_tensor_params.shape
+                Kh                      = filter_shape[0]
+                Kw                      = filter_shape[1]
+                K                       = filter_shape[3]
+                k_tensor_list.append(K)
+                kh_tensor_list.append(Kh)
+                kw_tensor_list.append(Kw)
+
+
+
+        except ValueError:
+            print('%s is an Op.' % n.name)
+   
+    
+    # ensure that created lists have the same length
+    assert(len(sw_tensor_list) == len(sh_tensor_list) == len(padding_tensor_list)
+            == len(conv_tensor_list) == len(input_tensor_list))
+    assert(len(k_tensor_list) == len(kh_tensor_list) == len(kw_tensor_list) == len(sw_tensor_list))
+
+    for ic, c in enumerate(conv_tensor_list):
+
+        if FLAGS.model_name  == Models.inceptionresnetv2.value:
+            image_data = tf.read_file(first_jpeg_image)
+            image_data = tf.image.decode_jpeg(image_date, channels=3)
+        elif FLAGS.model_name == Models.IV3:
+            image_data = tf.gfile.FastGFile(first_jpeg_image, 'rb').read()
+        else:
+            image_data              = readImage(first_jpeg_image)
+      
+        if FLAGS.model_name  == Models.inceptionresnetv2.value or FLAGS.model_name == Models.IV3:
+            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
+                    {first_input_tensor[0]: image_data})
+        else:
+           current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])]
+               , {first_input_tensor[0]: sess.run(image_data)})
+
+        _, Oh, Ow, _   = current_feature_map.shape
+        In, Ih, Iw, Ic = input_to_feature_map.shape
+        K, Kh, Kw,     = k_tensor_list[ic], kh_tensor_list[ic], kw_tensor_list[ic]
+        Sh, Sw         = sh_tensor_list[ic], sw_tensor_list[ic]
+        padding_type   = padding_tensor_list[ic]
+
+        input_tensor_name  = input_tensor_list[ic]
+        output_tensor_name = c.name 
+        
+        # Create the conv_layer
+        conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In, padding=padding_type)
+        conv_layer.padding_cal()
+        
+        # Get the density of the feature map
+        current_feature_map             = np.squeeze(current_feature_map)
+
+        # bug here!
+        #lowering_matrix                 = conv_layer.preprocessing_layer(current_feature_map)
+        feature_maps        = conv_layer.image_padding(current_feature_map)
+
+        #ru, lowering_density            = conv_layer.ru, conv_layer.lowering_density
+        ru            = conv_layer.ru
+
+        # Write in text file
+        txt_file = FLAGS.gen_dir + FLAGS.model_name + '_dnn.info'
+        info_file = open(txt_file, 'a')
+        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
+                (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw,
+                 conv_layer.Kh, conv_layer.Kw,
+                 conv_layer.Sh, conv_layer.Sw,
+                 conv_layer.Ic, conv_layer.K,
+                 conv_layer.ru, -1))
+        info_file.write(current_string)
+        print(current_string)
+
+        # Get all layers
+        all_layers.append(conv_layer)
+
+    
+    print(len(all_layers))
+
+    print('This code should work without exit.... Done!')
+    exit(0)
+    return all_layers
+
+
+
+# This function does not work for IV1 because some of the output shapes 
+# are not written in the forzen grph
 def get_DNN_info(sess):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
@@ -61,8 +195,8 @@ def get_DNN_info(sess):
     for  nid, n in enumerate(graph_def.node):
         try:
             
-            #print(n.name)
-            if 'Conv2D' in n.name:
+            print(n.name)
+            if 'Conv2D' in n.name and '_bn_' not in n.name:
 
                 output_tensor_name = n.name + ':0'
 
@@ -71,6 +205,11 @@ def get_DNN_info(sess):
                 Ih                = input_tensor.shape[1]
                 Iw                = input_tensor.shape[2]
                 Ic                = input_tensor.shape[3]
+                
+                if 'input' in n.input[0]:
+                    Ih = resized_dimention[FLAGS.model_name] 
+                    Iw = resized_dimention[FLAGS.model_name]
+                    Ic = 3
 
                 conv_tensor_params_name = n.input[1] + ':0'
                 conv_tensor_params      = sess.graph.get_tensor_by_name(conv_tensor_params_name)
@@ -96,7 +235,12 @@ def get_DNN_info(sess):
                 all_layers.append(conv_layer)
         except ValueError:
             print('%s is an Op.' % n.name)
-
+   
+    
+    # mohsen
+    for layer in all_layers:
+        print(layer)
+    exit(0)
     return all_layers
 
 
@@ -154,11 +298,12 @@ def get_DNN_for_modules(all_layers):
             for j in range(0,len(module[i][:])):
                 s = s + ('\n\t\t\t\t=-=-=-= CONV - %d =-=-=-= \n'%(module[i][j]))
                 layer = all_layers[module[i][j]]
-                s = s + ('%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\n' %
+                s = s + ('%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\n' %
                         (
                         layer.Ih, layer.Iw, \
                         layer.Kh, layer.Kw, \
                         layer.Sh, layer.Sw, \
+                        layer.Ic, layer.K   , \
                         ru[ru_idx*conv_num+module[i][j]], \
                         ru_bound_mec[ru_idx*conv_num+module[i][j]], \
                         ru_bound_cscc[ru_idx*conv_num+module[i][j]]
@@ -168,6 +313,14 @@ def get_DNN_for_modules(all_layers):
     LayerInfo_txt.close()
     return 1
 # ---- 
+
+def print_tensors_list(sess):
+    tensor_names = [n.name for n in sess.graph.as_graph_def().node]
+
+    for tensor in tensor_names:
+        itensor   = tensor + ":0"
+        ac_tensor = sess.graph.get_tensor_by_name(itensor)
+        print(tensor, ac_tensor.shape)
 
 def print_tensors(sess):
     
@@ -415,7 +568,7 @@ def patterns_cal(feature_maps, layer):
 
 def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data):
 
-    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name) 
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
     current_feature_map             = np.squeeze(current_feature_map)
     lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
@@ -425,6 +578,27 @@ def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, ima
     for method in range(1,len(conv_methods)):
         getCR(layer, method, Im2col_space)
     
+    getDensityBound(layer, conv_methods['MEC'])
+    getDensityBound(layer, conv_methods['CSCC'])
+    
+   # append the results
+    #results[ilayer] = layer
+
+    return layer
+
+
+def save_featureMaps(ilayer, layer, results, sess, input_tensor_name, image_data):
+
+    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+    current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+    current_feature_map             = np.squeeze(current_feature_map)
+    lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+    layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
+    CPO                             = overlap_cal(lowering_matrix, layer)
+    Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
+    for method in range(1,len(conv_methods)):
+        getCR(layer, method, Im2col_space)
+
     getDensityBound(layer, conv_methods['MEC'])
     getDensityBound(layer, conv_methods['CSCC'])
     # append the results
@@ -579,10 +753,6 @@ def readImageBatch(startBatch, endBatch, qf_list):
 
 def readAndPredictOptimizedImageByImage():
 
-    # Only used for InceptionResnetV2 or IV3
-    assert(models[FLAGS.model_name] == Models.inceptionresnetv2.value or (models[FLAGS.model_name] == Models.IV3.value))
-
-
     qf_list  = construct_qf_list()
     img_size   = resized_dimention[FLAGS.model_name]
     t        = 0
@@ -601,13 +771,16 @@ def readAndPredictOptimizedImageByImage():
             config = tf.ConfigProto(device_count = {'GPU': 0})
             sess = tf.Session(config=config)
             create_graph()
-       
             softmax_tensor = sess.graph.get_tensor_by_name(final_tensor_names[FLAGS.model_name])
             print('New session group has been created')
 
         # Get the DNN info for all layers at the start
         if actual_idx == FLAGS.START:
-            all_layers_info = get_DNN_info(sess)
+
+            first_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(1).zfill(8) + '.JPEG'
+            all_layers_info       = get_DNN_info_general(sess, first_jpeg_image)
+            exit(0)
+            # all_layers_info = get_DNN_info(sess)
 
         if original_img_ID < 0: ## till 48000 shoule generate again
             continue
@@ -759,10 +932,14 @@ def main(_):
     start = time.time()
     num_images =  50000
     
-    if models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value:
-        top1_count, top5_count = readAndPredictOptimizedImageByImage()
-    else:
-        top1_count, top5_count = readAndPredictLoopOptimized()
+
+    top1_count, top5_count = readAndPredictOptimizedImageByImage()
+
+    # Hossam: Disable the batching for inference for now - Later we need to add it
+    #if models[FLAGS.model_name] == Models.inceptionresnetv2.value or models[FLAGS.model_name] == Models.IV3.value:
+    #    top1_count, top5_count = readAndPredictOptimizedImageByImage()
+    #else:
+    #    top1_count, top5_count = readAndPredictLoopOptimized()
     #top1_accuracy = top1_count / num_images *100 
     #top5_accuracy = top5_count / num_images *100 
     #print('top1_accuracy == ', top1_accuracy ,'top5_accuracy == ',  top5_accuracy )

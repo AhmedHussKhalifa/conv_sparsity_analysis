@@ -129,6 +129,14 @@ class Conv_Layer(object):
           print("ERROR in padding in dimensions")
           # exit(0)
 
+          if (self.Ow == -1):
+              print('Will modify Ow from -1 to ', cal_Ow)
+              self.Ow = cal_Ow
+
+          if (self.Oh == -1):
+              print('Will modify Oh from -1 to ', cal_Oh)
+              self.Oh = cal_Oh
+
       paddings = [[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]]
       paddings = tf.convert_to_tensor(paddings, dtype=tf.int32)
       self.paddings = paddings.eval(session=tf.compat.v1.Session())

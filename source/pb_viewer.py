@@ -10,7 +10,8 @@ frozen_graph_path = os.path.join(MAIN_PATH, 'frozen_graphs')
 # model_name = 'inception_resnet_v2_frozen.pb'
 
 #model_name = 'frozen_mobilenet_v2_optimized.pb'
-model_name = 'classify_image_graph_def.pb'
+#model_name = 'classify_image_graph_def.pb'
+model_name = 'frozen_inception_v1_optimized.pb'
 with tf.Session() as sess:
     # model_filename ='frozen_inception_v1.pb'
     model_filename = os.path.join(frozen_graph_path, model_name)
