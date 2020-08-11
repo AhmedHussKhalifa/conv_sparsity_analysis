@@ -202,11 +202,11 @@ class Conv_Layer(object):
     return lowering_matrix
 
   def cal_density(self, lowering_matrix):  
-  	# check lowering matrix is 2D
-  	if (lowering_matrix.ndim != 2):
-  		print("ERROR in lowering matrix dimensions")
-  		print("Lowering matrix dimensions : ", np.shape(lowering_matrix))
-  		exit(0)
+    # check lowering matrix is 2D
+    if (lowering_matrix.ndim != 2):
+      print("ERROR in lowering matrix dimensions")
+      print("Lowering matrix dimensions : ", np.shape(lowering_matrix))
+      exit(0)
     self.lowering_shape = np.shape(lowering_matrix)
     resol_lowering = self.lowering_shape[0]*self.lowering_shape[1]
     resol_lowering_ = self.Ow*self.Ih*self.Kw*self.Ic
