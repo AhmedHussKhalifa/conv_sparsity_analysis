@@ -158,7 +158,6 @@ class Conv_Layer(object):
     return feature_maps
   
   def lowering_rep(self, feature_maps):
-    lowering_matrix                    = np.empty((self.Ow,0), int)
     self.last_channel_cal              = self.Ic
     #############################################
     # Not the most important information we need
@@ -167,11 +166,13 @@ class Conv_Layer(object):
     self.both_feature_lowering  = 0
     #############################################
     if ((self.Kw == 1)):
+      lowering_matrix           = np.empty((self.Ih,0), int)
       for idx in range(self.last_channel_cal):
         m_f = feature_maps[:, :, idx]  
         sub_tmp     = m_f.transpose()
         lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
     else:
+      lowering_matrix           = np.empty((self.Ow,0), int)
       for idx in range(self.last_channel_cal):
         m_f = feature_maps[:, :, idx]  
         # Here we creates the lowering Matrix for MEC and CSCC
