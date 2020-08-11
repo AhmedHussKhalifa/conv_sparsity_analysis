@@ -171,7 +171,6 @@ class Conv_Layer(object):
         m_f = feature_maps[:, :, idx]  
         sub_tmp     = m_f.transpose()
         lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
-
     else:
       for idx in range(self.last_channel_cal):
         m_f = feature_maps[:, :, idx]  
@@ -203,6 +202,11 @@ class Conv_Layer(object):
     return lowering_matrix
 
   def cal_density(self, lowering_matrix):  
+  	# check lowering matrix is 2D
+  	if (lowering_matrix.ndim != 2)
+  		print("ERROR in lowering matrix dimensions")
+  		print("Lowering matrix dimensions : ", np.shape(lowering_matrix))
+  		exit(0)
     self.lowering_shape = np.shape(lowering_matrix)
     resol_lowering = self.lowering_shape[0]*self.lowering_shape[1]
     resol_lowering_ = self.Ow*self.Ih*self.Kw*self.Ic
