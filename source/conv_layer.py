@@ -178,8 +178,8 @@ class Conv_Layer(object):
           x       = x.ravel(order='K') # K -> for row major && F -> for col major
           x       = np.reshape(x,(1,np.size(x)))
           sub_tmp = np.append(sub_tmp, x, axis=0)
-        print("## Sub_tmp  Matrix ## --> ", np.shape(sub_tmp))
-        print("## Lowering Matrix ## --> ", np.shape(lowering_matrix))
+        # print("## Sub_tmp  Matrix ## --> ", np.shape(sub_tmp))
+        # print("## Lowering Matrix ## --> ", np.shape(lowering_matrix))
         lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
         self.lowering_density_channel = np.append( self.lowering_density_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
         self.feature_density_channel = np.append(self.feature_density_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
