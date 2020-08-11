@@ -75,8 +75,8 @@ def get_DNN_info_general(sess, first_jpeg_image):
             if nid == 0:
                 first_input_tensor.append(n.name + ':0')
 
-            # print(n.name)
-            if 'Conv2D' in n.name and '_bn_' not in n.name and 'Logits' not in n.name and 'logits' not in n.name:
+            #print(n.name)
+            if ('Conv2D' in n.name or 'convolution' in n.name) and '_bn_' not in n.name and 'Logits' not in n.name and 'logits' not in n.name:
 
                 output_tensor_name = n.name + ':0'
                 input_tensor_name = n.input[0] + ':0'

@@ -1,6 +1,23 @@
 import enum
 
 
+
+#models             = {  'IV1':         1,
+#                        'IV3':         2,
+#                        'IV4':         3,
+#                        'MobileNet':   4,
+#                        'MobileNetV2': 5,
+#                        'ResNet-V2-101': 6,
+#                        'ResNet-V2-50':  7,
+#                        'Pnasnet_Large': 8,
+#                        'nasnet_mobile': 9,
+#                        'EfficientNet' : 10,
+#                        'InceptionResnetV2': 11,
+#                        'Vgg16'        : 12,
+#                        'Vgg19'        : 13
+#
+# }
+
 # This class desribes the possible model names for our inference code.
 class Models(enum.Enum):
 
@@ -10,12 +27,13 @@ class Models(enum.Enum):
     mobileNet   = 4
     mobileNetV2 = 5
     resnet101   = 6
-    Pnasnet_Large = 7
-    nasnet_mobile = 8
-    EfficientNet = 9
-    inceptionresnetv2 = 10
-    Vgg16        = 11
-    Vgg19        = 12
+    resnet50    = 7
+    Pnasnet_Large = 8
+    nasnet_mobile = 9
+    EfficientNet = 10
+    inceptionresnetv2 = 11
+    Vgg16        = 12
+    Vgg19        = 13
     
     
 
