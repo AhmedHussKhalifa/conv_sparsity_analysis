@@ -93,7 +93,7 @@ def run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, ima
 
 
 # python3-tf run_inference.py --select Org --model_name IV1 --END 2
-def get_DNN_info_general(sess, first_jpeg_image, n_images = 5):
+def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
    
@@ -207,7 +207,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 5):
     sess = tf.Session(config=config)
     create_graph()
     # Loop through images to get the average density for images:
-    for imgID in range(2, n_images):
+    for imgID in range(2, 3):
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
@@ -254,12 +254,21 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 5):
         all_layers[ilayer].ru = all_layers[ilayer].ru/n_images
         all_layers[ilayer].lowering_density = all_layers[ilayer].lowering_density/n_images
 
-        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
+#        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
+#                (layer.input_tensor_name, layer.output_tensor_name, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
+#                    layer.Kh, layer.Kw,
+#                    layer.Sh, layer.Sw,
+#                    layer.Ic, layer.K,
+#                    layer.ru, layer.lowering_density))
+
+        current_string = ('%s & %s & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f\\\\\n' %
                 (layer.input_tensor_name, layer.output_tensor_name, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
                     layer.Kh, layer.Kw,
                     layer.Sh, layer.Sw,
                     layer.Ic, layer.K,
                     layer.ru, layer.lowering_density))
+        print(current_string)
+        exit(0)
         info_file.write(current_string)
         print(current_string)
 
