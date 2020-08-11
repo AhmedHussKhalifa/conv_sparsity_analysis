@@ -164,7 +164,14 @@ def get_DNN_info_general(sess, first_jpeg_image):
 
         input_tensor_name  = input_tensor_list[ic]
         output_tensor_name = c.name 
-        
+
+        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n' %
+                (input_tensor_name, output_tensor_name, Ih, Iw, Oh, Ow,
+                 Kh, Kw,
+                 Sh, Sw,
+                 Ic, K,
+                 padding_type))
+        print(current_string)
         # Create the conv_layer
         conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In, padding=padding_type)
         conv_layer.padding_cal()

@@ -166,36 +166,36 @@ class Conv_Layer(object):
     self.feature_desity_count   = 0
     self.both_feature_lowering  = 0
     #############################################
-    
-    for idx in range(self.last_channel_cal):
+    if ((self.Kw>1) or (self.Kh>1)):
+      for idx in range(self.last_channel_cal):
         m_f = feature_maps[:, :, idx]  
         # Here we creates the lowering Matrix for MEC and CSCC
         sub_tmp = np.empty((0,self.Kw*self.Ih_padded), int)
-        if ((self.Kw>1) or (self.Kh>1)):
-            for col_int in range(0, self.Iw_padded, self.Sw):
-                if (col_int+self.Kw)>self.Iw_padded :
-                    break
-
-                x       = m_f[:,col_int:col_int+self.Kw] # col_int+kw-1 without 1 bec it the stop element
-                x       = x.ravel(order='K') # K -> for row major && F -> for col major
-                x       = np.reshape(x,(1,np.size(x)))
-                sub_tmp = np.append(sub_tmp, x, axis=0)
-        else:
-            sub_tmp     = m_f.transpose();
-        
+        for col_int in range(0, self.Iw_padded, self.Sw):
+          if (col_int+self.Kw)>self.Iw_padded :
+            break
+          x       = m_f[:,col_int:col_int+self.Kw] # col_int+kw-1 without 1 bec it the stop element
+          x       = x.ravel(order='K') # K -> for row major && F -> for col major
+          x       = np.reshape(x,(1,np.size(x)))
+          sub_tmp = np.append(sub_tmp, x, axis=0)
+        print("## Sub_tmp  Matrix ## --> ", np.shape(sub_tmp))
+        print("## Lowering Matrix ## --> ", np.shape(lowering_matrix))
         lowering_matrix = np.append(lowering_matrix, sub_tmp, axis=1)
         self.lowering_density_channel = np.append( self.lowering_density_channel, np.size(sub_tmp[sub_tmp != 0.0])/(sub_tmp.shape[0]*sub_tmp.shape[1]))
         self.feature_density_channel = np.append(self.feature_density_channel, np.size(m_f[m_f != 0.0])/(m_f.shape[0]*m_f.shape[1]))
-
+        # This part is used for debugging 
         if (self.feature_density_channel[idx] < self.lowering_density_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
-            self.lower_desity_count = self.lower_desity_count + 1
+          # print (("Density per channel : Feature Map--> [ %f < %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
+          self.lower_desity_count = self.lower_desity_count + 1
         elif (self.feature_density_channel[idx] > self.lowering_density_channel[idx] ):
-            # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
-            self.feature_desity_count = self.feature_desity_count + 1
+          # print (("Density per channel : Feature Map--> [ %f > %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
+          self.feature_desity_count = self.feature_desity_count + 1
         else:
-            self.both_feature_lowering = self.both_feature_lowering + 1
-            # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
+          self.both_feature_lowering = self.both_feature_lowering + 1
+          # print (("Density per channel : Feature Map--> [ %f = %f ] <--Lowering Matrix ")%(feature_desity_channel[idx], lowering_density_channel[idx]))
+    else:
+      lowering_matrix     = feature_maps.transpose()
+
     return lowering_matrix
 
   def cal_density(self, lowering_matrix):  
