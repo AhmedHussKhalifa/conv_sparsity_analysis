@@ -810,6 +810,7 @@ def readAndPredictOptimizedImageByImage():
         if actual_idx == FLAGS.START:
 
             first_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(1).zfill(8) + '.JPEG'
+            #first_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(10).zfill(8) + '.JPEG'
             all_layers_info       = get_DNN_info_general(sess, first_jpeg_image)
             exit(0)
             #all_layers_info = get_DNN_info(sess)
