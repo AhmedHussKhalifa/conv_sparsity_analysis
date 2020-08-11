@@ -121,7 +121,7 @@ def get_DNN_info_general(sess, first_jpeg_image):
     # Write the header in text file
     txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
     info_file = open(txt_file, 'w')
-    current_string = ('====input_tensor_name\toutput_tensor_name\tIh\tIw\tKh\tKw\tSh\tSw\tIc\tK\tru\tlowering_density====\n')
+    current_string = ('====input_tensor_name\toutput_tensor_name\tIh\tIw\tOh\tOw\tKh\tKw\tSh\tSw\tIc\tK\tru\tlowering_density====\n')
     info_file.write(current_string)
 
     for ic, c in enumerate(conv_tensor_list):
@@ -137,6 +137,9 @@ def get_DNN_info_general(sess, first_jpeg_image):
         if FLAGS.model_name  == 'InceptionResnetV2' or  FLAGS.model_name == 'IV3':
             current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
                     {first_input_tensor[0]: image_data})
+        elif FLAGS.model_name  == 'MobileNetV2':
+            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
+                    {"input:0": sess.run(image_data)})
         else:
            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])]
                , {first_input_tensor[0]: sess.run(image_data)})
@@ -153,31 +156,29 @@ def get_DNN_info_general(sess, first_jpeg_image):
         # Create the conv_layer
         conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In, padding=padding_type)
         conv_layer.padding_cal()
-        
-        # Get the density of the feature map
-        current_feature_map             = np.squeeze(current_feature_map)
 
-        # bug here!
-        #lowering_matrix                 = conv_layer.preprocessing_layer(current_feature_map)
+        # Calculate the densities 
+        lowering_matrix                 = conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
 
         #print('********* PADDING TYPE ', conv_layer.padding, ' PADDINGS: ' , conv_layer.paddings, ' Input: ', input_tensor_name, ' out: ', output_tensor_name,
         #        ' Ih: ', conv_layer.Ih)
-        feature_maps        = conv_layer.image_padding(current_feature_map)
-
-        #ru, lowering_density            = conv_layer.ru, conv_layer.lowering_density
-        ru            = conv_layer.ru
+        #feature_maps        = conv_layer.image_padding(np.squeeze(input_to_feature_map))
 
         # Write in text file
         txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
         info_file = open(txt_file, 'a')
-        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
-                (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw,
+        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
+                (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw, conv_layer.Oh, conv_layer.Ow,
                  conv_layer.Kh, conv_layer.Kw,
                  conv_layer.Sh, conv_layer.Sw,
                  conv_layer.Ic, conv_layer.K,
-                 conv_layer.ru, -1))
+                 conv_layer.ru, conv_layer.lowering_density))
         info_file.write(current_string)
         print(current_string)
+
+        if conv_layer.ru > 1:
+            print('Greather than 1!!')
+            exit(0)
 
         # Get all layers
         all_layers.append(conv_layer)
@@ -203,7 +204,7 @@ def get_DNN_info(sess):
     for  nid, n in enumerate(graph_def.node):
         try:
             
-            print(n.name)
+            #print(n.name)
             if 'Conv2D' in n.name and '_bn_' not in n.name:
 
                 output_tensor_name = n.name + ':0'
@@ -245,10 +246,21 @@ def get_DNN_info(sess):
             print('%s is an Op.' % n.name)
    
     
-    # mohsen
-    for layer in all_layers:
-        print(layer)
-    exit(0)
+    # mohsen 2
+#    for ilayer in range(len(all_layers)):
+#        print('Conv Node %d' % ilayer)
+#        layer              = all_layers[ilayer]
+#        results = None
+#        first_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(1).zfill(8) + '.JPEG'
+#        image_data = tf.gfile.FastGFile(first_jpeg_image, 'rb').read()
+#        current_feature_map             = sess.run(layer.output_tensor_name,{'DecodeJpeg/contents:0': image_data})
+#        current_feature_map             = np.squeeze(current_feature_map)
+#        lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
+#
+#        all_layers[ilayer] = layer
+#        print(layer)
+#        exit(0)
+#    exit(0)
     return all_layers
 
 
@@ -788,7 +800,7 @@ def readAndPredictOptimizedImageByImage():
             first_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(1).zfill(8) + '.JPEG'
             all_layers_info       = get_DNN_info_general(sess, first_jpeg_image)
             exit(0)
-            # all_layers_info = get_DNN_info(sess)
+            #all_layers_info = get_DNN_info(sess)
 
         if original_img_ID < 0: ## till 48000 shoule generate again
             continue
@@ -806,8 +818,8 @@ def readAndPredictOptimizedImageByImage():
             # get_DNN_modules(all_layers_info)
             # exit(0)
 
-            get_DNN_for_modules(all_layers_info)
-            exit(0)
+            #get_DNN_for_modules(all_layers_info)
+            #exit(0)
             
             if FLAGS.select == CodeMode.getCodeName(1): # Org
                 qf_idx     =  0
