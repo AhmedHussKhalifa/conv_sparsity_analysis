@@ -207,7 +207,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     sess = tf.Session(config=config)
     create_graph()
     # Loop through images to get the average density for images:
-    for imgID in range(2, 3):
+    for imgID in range(2, n_images):
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
@@ -261,19 +261,17 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 #                    layer.Ic, layer.K,
 #                    layer.ru, layer.lowering_density))
 
-        current_string = ('%s & %s & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f\\\\\n' %
-                (layer.input_tensor_name, layer.output_tensor_name, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
+        current_string = ('%d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f \\\\\n' %
+                (ilayer, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
                     layer.Kh, layer.Kw,
                     layer.Sh, layer.Sw,
                     layer.Ic, layer.K,
                     layer.ru, layer.lowering_density))
-        print(current_string)
-        exit(0)
         info_file.write(current_string)
-        print(current_string)
+        #print(current_string)
 
 
-    info_file.write('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
+    #info_file.write('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
     info_file.close()
 
 
