@@ -117,6 +117,12 @@ def get_DNN_info_general(sess, first_jpeg_image):
     assert(len(sw_tensor_list) == len(sh_tensor_list) == len(padding_tensor_list)
             == len(conv_tensor_list) == len(input_tensor_list))
     assert(len(k_tensor_list) == len(kh_tensor_list) == len(kw_tensor_list) == len(sw_tensor_list))
+    
+    # Write the header in text file
+    txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
+    info_file = open(txt_file, 'w')
+    current_string = ('====input_tensor_name\toutput_tensor_name\tIh\tIw\tKh\tKw\tSh\tSw\tIc\tK\tru\tlowering_density====\n')
+    info_file.write(current_string)
 
     for ic, c in enumerate(conv_tensor_list):
 
@@ -162,7 +168,7 @@ def get_DNN_info_general(sess, first_jpeg_image):
         ru            = conv_layer.ru
 
         # Write in text file
-        txt_file = FLAGS.gen_dir + FLAGS.model_name + '_dnn.info'
+        txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
         info_file = open(txt_file, 'a')
         current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
                 (conv_layer.input_tensor_name, conv_layer.output_tensor_name, conv_layer.Ih, conv_layer.Iw,
