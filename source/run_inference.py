@@ -14,6 +14,7 @@ import xlrd
 from xlwt import *
 from xlutils.copy import copy
 
+import cv2
 import math 
 import glob 
 import time 
@@ -55,6 +56,7 @@ def create_graph():
 def get_DNN_info_general(sess, first_jpeg_image):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
+   
 
     all_tensors = [tensor for op in tf.get_default_graph().get_operations() for tensor in op.values()]
     all_layers  = []
@@ -131,6 +133,13 @@ def get_DNN_info_general(sess, first_jpeg_image):
             image_data = tf.image.decode_jpeg(image_date, channels=3)
         elif FLAGS.model_name == 'IV3':
             image_data = tf.gfile.FastGFile(first_jpeg_image, 'rb').read()
+        elif FLAGS.model_name == 'AlexNet':
+            imagenet_mean = np.array([104., 117., 124.], dtype=np.float32)
+            img           = cv2.imread(first_jpeg_image)
+            img           = cv2.resize(img.astype(np.float32), (resized_dimention[FLAGS.model_name], resized_dimention[FLAGS.model_name]))
+            img          -= imagenet_mean
+            image_data    = img.reshape((1, resized_dimention[FLAGS.model_name], resized_dimention[FLAGS.model_name], 3))
+
         else:
             image_data              = readImage(first_jpeg_image)
       
@@ -140,6 +149,9 @@ def get_DNN_info_general(sess, first_jpeg_image):
         elif FLAGS.model_name  == 'MobileNetV2':
             current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
                     {"input:0": sess.run(image_data)})
+        elif FLAGS.model_name == 'AlexNet':
+            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])],
+                    {"Placeholder:0": image_data, 'Placeholder_1:0': 1})
         else:
            current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])]
                , {first_input_tensor[0]: sess.run(image_data)})

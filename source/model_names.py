@@ -20,7 +20,7 @@ import enum
 
 # This class desribes the possible model names for our inference code.
 class Models(enum.Enum):
-
+    
     IV1         = 1
     IV3         = 2
     IV4         = 3
@@ -30,10 +30,11 @@ class Models(enum.Enum):
     resnet50    = 7
     Pnasnet_Large = 8
     nasnet_mobile = 9
-    EfficientNet = 10
-    inceptionresnetv2 = 11
-    Vgg16        = 12
-    Vgg19        = 13
+    alexNet       = 10
+    EfficientNet = 11
+    inceptionresnetv2 = 12
+    Vgg16        = 13
+    Vgg19        = 14
     
     
 

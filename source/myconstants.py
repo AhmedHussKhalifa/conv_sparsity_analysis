@@ -26,10 +26,11 @@ models             = {  'IV1':         1,
                         'ResNet-V2-50':  7,
                         'Pnasnet_Large': 8,
                         'nasnet_mobile': 9,
-                        'EfficientNet' : 10,
-                        'InceptionResnetV2': 11,
-                        'Vgg16'        : 12,
-                        'Vgg19'        : 13
+                        'AlexNet'      : 10,      
+                        'EfficientNet' : 11,
+                        'InceptionResnetV2': 12,
+                        'Vgg16'        : 13,
+                        'Vgg19'        : 14
 
  }
 
@@ -44,6 +45,7 @@ final_tensor_names = {  'IV1':         'InceptionV1/Logits/Predictions/Reshape_1
                         'InceptionResnetV2': 'InceptionResnetV2/Logits/Predictions:0',
                         'Pnasnet_Large': 'final_layer/predictions:0',
                         'nasnet_mobile': 'final_layer/predictions:0',
+                        'AlexNet'      :  'Softmax:0'              ,
                         'EfficientNet' : 'save_1/RestoreV2/shape_and_slices:0',
                         # 'Vgg16'        : 'Softmax:0',
                         'Vgg16'        : 'vgg_16/fc8/squeezed:0',
@@ -62,6 +64,7 @@ resized_dimention = {  'IV1':            224,
                         'InceptionResnetV2': 299,
                         'Pnasnet_Large': 331,
                         'nasnet_mobile': 224, 
+                        'AlexNet'      : 227, 
                         'EfficientNet' : 224,
                         'Vgg16'        : 224,
                         # 'Vgg16'        : 299,
@@ -84,7 +87,8 @@ Frozen_Graph  =  {      'IV1':           'frozen_inception_v1_optimized.pb',
                         'Vgg16'        : 'frozen_vgg_16_not_1.pb',
                         # 'Vgg19'        : 'vgg19_frozen_graph.pb',
                         'Vgg19'       : 'frozen_vgg_19.pb',
-                        'EfficientNet' : 'efficientnet_model.pb'
+                        'EfficientNet' : 'efficientnet_model.pb',
+                        'AlexNet'      : 'alexnet_frozen.pb'
 
                        
  }
@@ -94,6 +98,7 @@ Frozen_Graph  =  {      'IV1':           'frozen_inception_v1_optimized.pb',
 all_models             = [
                         'IV3',
                         'ResNet-V2-50',
+                        'AlexNet',
                         'Vgg16',
                         'InceptionResnetV2',
                         'MobileNet', # next test
