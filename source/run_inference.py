@@ -76,7 +76,7 @@ def get_DNN_info_general(sess, first_jpeg_image):
                 first_input_tensor.append(n.name + ':0')
 
             # print(n.name)
-            if 'Conv2D' in n.name and '_bn_' not in n.name:
+            if 'Conv2D' in n.name and '_bn_' not in n.name and 'Logits' not in n.name and 'logits' not in n.name:
 
                 output_tensor_name = n.name + ':0'
                 input_tensor_name = n.input[0] + ':0'
@@ -120,15 +120,15 @@ def get_DNN_info_general(sess, first_jpeg_image):
 
     for ic, c in enumerate(conv_tensor_list):
 
-        if FLAGS.model_name  == Models.inceptionresnetv2.value:
+        if FLAGS.model_name  == 'InceptionResnetV2':
             image_data = tf.read_file(first_jpeg_image)
             image_data = tf.image.decode_jpeg(image_date, channels=3)
-        elif FLAGS.model_name == Models.IV3:
+        elif FLAGS.model_name == 'IV3':
             image_data = tf.gfile.FastGFile(first_jpeg_image, 'rb').read()
         else:
             image_data              = readImage(first_jpeg_image)
       
-        if FLAGS.model_name  == Models.inceptionresnetv2.value or FLAGS.model_name == Models.IV3:
+        if FLAGS.model_name  == 'InceptionResnetV2' or  FLAGS.model_name == 'IV3':
             current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_list[ic])], 
                     {first_input_tensor[0]: image_data})
         else:
@@ -153,6 +153,9 @@ def get_DNN_info_general(sess, first_jpeg_image):
 
         # bug here!
         #lowering_matrix                 = conv_layer.preprocessing_layer(current_feature_map)
+
+        #print('********* PADDING TYPE ', conv_layer.padding, ' PADDINGS: ' , conv_layer.paddings, ' Input: ', input_tensor_name, ' out: ', output_tensor_name,
+        #        ' Ih: ', conv_layer.Ih)
         feature_maps        = conv_layer.image_padding(current_feature_map)
 
         #ru, lowering_density            = conv_layer.ru, conv_layer.lowering_density
@@ -174,8 +177,7 @@ def get_DNN_info_general(sess, first_jpeg_image):
         all_layers.append(conv_layer)
 
     
-    print(len(all_layers))
-
+    print('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
     print('This code should work without exit.... Done!')
     exit(0)
     return all_layers
