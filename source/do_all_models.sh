@@ -1,3 +1,8 @@
+rm ../gen/*.info*
+echo 'Removed all info files!'
+ls ../gen/*.info*/
+echo 'No files - I know ;)'
+
 time /usr/bin/python3 run_inference.py --select Org --END 2 --model_name IV1
 time /usr/bin/python3 run_inference.py --select Org --END 2 --model_name IV3
 time /usr/bin/python3 run_inference.py --select Org --END 2 --model_name IV4
