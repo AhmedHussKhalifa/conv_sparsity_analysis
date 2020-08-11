@@ -203,7 +203,7 @@ class Conv_Layer(object):
 
   def cal_density(self, lowering_matrix):  
   	# check lowering matrix is 2D
-  	if (lowering_matrix.ndim != 2)
+  	if (lowering_matrix.ndim != 2):
   		print("ERROR in lowering matrix dimensions")
   		print("Lowering matrix dimensions : ", np.shape(lowering_matrix))
   		exit(0)
