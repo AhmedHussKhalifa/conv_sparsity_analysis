@@ -120,7 +120,7 @@ class Conv_Layer(object):
           pad_left = 0
           pad_right = 0
       else:
-          print("ERROR in padding at inputs")
+          print("ERROR no padding type input")
           exit(0)
 
       if ((self.Ow != cal_Ow) or (self.Oh != cal_Oh)):
