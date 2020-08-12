@@ -94,6 +94,7 @@ def run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, ima
 
 # python3-tf run_inference.py --select Org --model_name IV1 --END 2
 def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
+#def get_DNN_info_general(sess, first_jpeg_image, n_images = 3):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
    
@@ -199,7 +200,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         # Get all layers
         all_layers.append(conv_layer)
 
-        print('Analyzed Conv Node %d' % ic)
+        print('[%s] Analyzed Conv Node %d' % (FLAGS.model_name, ic))
 
     
     print('Reset the session')
@@ -211,7 +212,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
-        print(current_jpeg_image)
+        print('[%s] %s' % (FLAGS.model_name, current_jpeg_image))
 
         # Loop through all convs in the model to update their densities:
         for ic, c in enumerate(conv_tensor_list):
@@ -230,7 +231,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
             all_layers[ic].lowering_density += old_conv_layer.lowering_density
 
             if not ic % 10:
-                print('Analyzed Conv Node %d' % ic)
+                print('[%s] Analyzed Conv Node %d' % (FLAGS.model_name, ic))
 
             if ic == int(0.25*len(conv_tensor_list)) or ic == int(0.5*len(conv_tensor_list)) or ic == int(0.75*len(conv_tensor_list)):
                 # reset the session:
