@@ -257,7 +257,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 
             # Data for preformance paper
             # File name the have the conv layer intput 
-            input_tensor_FeatureMap_fileName = (FLAGS.model_name+"Conv_%d_ImgID_%d")%(ic, imgID)
+            input_tensor_FeatureMap_fileName = (FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, imgID)
             file_list_file.write(input_tensor_FeatureMap_fileName+"\n")
             current_string = ("%d")%(Ih)
             conv_shape_file.write(current_string+"\n")
