@@ -203,7 +203,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 
         # Data for preformance paper
         # File name the have the conv layer intput 
-        input_tensor_FeatureMap_fileName = (FLAGS.model_name+"Conv_%d_ImgID_%d")%(ic, 1)
+        input_tensor_FeatureMap_fileName = (FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, 1)
         
         file_list_file.write(input_tensor_FeatureMap_fileName+"\n")
         current_string = ("%d")%(Ih)
@@ -235,11 +235,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     sess = tf.Session(config=config)
     create_graph()
     # Loop through images to get the average density for images:
-<<<<<<< HEAD
     for imgID in range(2, FLAGS.END + 1):
-=======
-    for imgID in range(2, n_images):
->>>>>>> 99f0eb9c9a922d6d126c14dd549c81286b0dc466
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
