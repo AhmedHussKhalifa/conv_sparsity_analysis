@@ -1,0 +1,14 @@
+
+# Note: Run this code with 'source start_tf.sh"
+module load python/3.6
+virtualenv --no-download tensorflow
+# Activate the virtual environment
+source tensorflow/bin/activate
+pip install --no-index tensorflow_gpu==1.12
+#pip install --no-index tensorflow_gpu==2.0
+pip install numpy
+pip install six
+pip install pandas
+pip install joblib
+pip install tf_slim
+pip install scipy

@@ -1,11 +1,16 @@
 
 # Put all our constants here
 
-org_image_dir      = '/home/h2amer/work/workspace/ML_TS/validation_original'
-image_dir          = '/media/h2amer/MULTICOM-104/Customized_validation/validation_generated_QF_1'
-WORKSPACE_DIR      = '/home/h2amer/work/workspace/space_complexity_analysis/'
-MODEL_PATH         =  WORKSPACE_DIR + 'util/frozen_graphs/'
+# org_image_dir      = '/home/h2amer/work/workspace/ML_TS/validation_original'
+# image_dir          = '/media/h2amer/MULTICOM-104/Customized_validation/validation_generated_QF_1'
+# WORKSPACE_DIR      = '/home/h2amer/work/workspace/space_complexity_analysis/'
+# MODEL_PATH         =  WORKSPACE_DIR + 'util/frozen_graphs/'
 
+
+image_dir          = '/media/h2amer/MULTICOM-104/Customized_validation/validation_generated_QF_1'
+WORKSPACE_DIR      = '/home/ahamsala/scratch/'
+MODEL_PATH         =  WORKSPACE_DIR + 'frozen_graphs/'
+org_image_dir      =  WORKSPACE_DIR + 'validation_original'
 
 conv_methods         = {'CPO'   :        1,
                         'CPS'   :        2,

@@ -12,12 +12,12 @@ import time
 
 
 # Excel sheet stuff:
-import xlrd
-from xlwt import *
-from xlutils.copy import copy
+# import xlrd
+# from xlwt import *
+# from xlutils.copy import copy
 
 import copy
-import cv2
+# import cv2
 import math 
 import glob 
 import time 
@@ -232,7 +232,8 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     
     print('Reset the session')
     config = tf.ConfigProto(device_count = {'GPU': 0})
-    sess = tf.Session(config=config)
+    sess = tf.Session(config=config) 
+    # sess = tf.Session() # For GPU RUN
     create_graph()
     # Loop through images to get the average density for images:
     for imgID in range(2, FLAGS.END + 1):
