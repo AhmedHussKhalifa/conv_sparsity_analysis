@@ -1,0 +1,18 @@
+The following modules were not unloaded:
+  (Use "module --force purge" to unload all):
+
+  1) nixpkgs/16.09     4) icc/.2016.4.258     7) openmpi/2.1.1
+  2) imkl/11.3.4.258   5) ifort/.2016.4.258   8) StdEnv/2016.4
+  3) gcccore/.5.4.0    6) intel/2016.4
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) openmpi/2.1.1
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) openmpi/2.1.1
+
+nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+cudnn.cu:12:19: fatal error: cudnn.h: No such file or directory
+compilation terminated.
+/var/spool/slurmd/job50581335/slurm_script: line 12: ./cudnn: No such file or directory

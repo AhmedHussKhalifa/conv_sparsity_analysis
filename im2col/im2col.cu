@@ -39,15 +39,16 @@ __global__ void func_old(float* input,float* output,
 
 
 int main(){
-	string a[4995];
-	int h[4995],w[4995];
-	ifstream file_list("../dataset/vgg19/file_list");
-	for(int i=0;i<4995;i++)
+	int fileNum = 2 * 94;
+	string a[fileNum];
+	int h[fileNum],w[fileNum];
+	ifstream file_list("../gen/file_list");
+	for(int i=0;i<fileNum;i++)
 		file_list>>a[i];
 	file_list.close();
 	
-	ifstream conv_shape("../dataset/vgg19/conv_shape");
-	for(int i=0;i<4995;i++){
+	ifstream conv_shape("../gen/conv_shape");
+	for(int i=0;i<fileNum;i++){
 		conv_shape>>h[i];
 		w[i] = h[i];
 	}
@@ -62,7 +63,7 @@ int main(){
 	const int kernelSize = k_w*k_h;
 	const float kernel[kernelSize] = { 1,0,1,0,1,1,0,1,1};
 	
-	for(int i=0;i<4995;i++){
+	for(int i=0;i<fileNum;i++){
 		int i_w = w[i];
 		int i_h = h[i];
 		//cout<<i_w<<i_h<<endl;
@@ -75,7 +76,7 @@ int main(){
 		float *feature = new float[arraySize];
 		
 		len = 0;
-		ifstream conv_feature(("../dataset/vgg19/conv/"+a[i]).c_str());
+		ifstream conv_feature(("../conv/"+a[i]).c_str());
 		while(!conv_feature.eof())
 			conv_feature>>feature[len++];
 		conv_feature.close();

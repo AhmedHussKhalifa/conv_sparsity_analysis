@@ -3,26 +3,52 @@
 #include <malloc.h>
 #include <fstream>
 #include <math.h>
+#include <sys/types.h>
+#include <dirent.h>
 
-
+// #define fileNum 190 
 using  namespace std;
 
+int count_dir()
+{
+	DIR *dp;
+	int i = 0;
+	struct dirent *ep;     
+	dp = opendir ("../conv/");
+
+	if (dp != NULL)
+	{
+		while (ep = readdir (dp))
+		i++;
+		(void) closedir (dp);
+	}
+	else
+	{
+		perror ("Couldn't open the directory");
+	}
+	printf("There's %d files in the current directory.\n", i);
+	return i;
+}
+
 int main(){
-	string a[4995];
-	int h[4995],w[4995];
-	ifstream file_list("../dataset/vgg19/file_list");
-	for(int i=0;i<4995;i++)
+
+	// int fileNum = count_dir();
+	int fileNum = 2 * 94;
+	string a[fileNum];
+	int h[fileNum],w[fileNum];
+	ifstream file_list("../gen/file_list");
+	for(int i=0;i<fileNum;i++)
 		file_list>>a[i];
 	file_list.close();
-	ifstream conv_shape("../dataset/vgg19/conv_shape");
-	for(int i=0;i<4995;i++){
+	ifstream conv_shape("../gen/conv_shape");
+	for(int i=0;i<fileNum;i++){
 		conv_shape>>h[i];
 		w[i] = h[i];
 	}
 	conv_shape.close();
 	double len,temp;
 	
-	for(int i=0;i<4995;i++){
+	for(int i=0;i<fileNum;i++){
 		int i_w = w[i];
 		int i_h = h[i];
 		double arraySize = i_w*i_h;
@@ -30,7 +56,7 @@ int main(){
 		float *feature = new float[int(arraySize)];
 		
 		len = 0;
-		ifstream conv_feature(("../dataset/vgg19/conv/"+a[i]).c_str());
+		ifstream conv_feature(("../conv/"+a[i]).c_str());
 		while(!conv_feature.eof())
 			conv_feature>>feature[int(len++)];
 		conv_feature.close();
@@ -44,6 +70,7 @@ int main(){
 			}
 		}
 		double sparse = double(temp/arraySize);
+		// cout<< i << "--> "<<sparse<<endl;
 		cout<<sparse<<endl;
 		free(feature);
 	}

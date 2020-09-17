@@ -59,14 +59,15 @@ __global__ void func_new(float* input,float *kernel,float* output,
 
 
 int main(){
-	string a[3715];
-	int h[3715],w[3715];
-	ifstream file_list("../dataset/vgg16/file_list");
-	for(int i=0;i<3715;i++)
+	int fileNum = 2 * 94;
+	string a[fileNum];
+	int h[fileNum],w[fileNum];
+	ifstream file_list("../gen/file_list");
+	for(int i=0;i<fileNum;i++)
 		file_list>>a[i];
 	file_list.close();
-	ifstream conv_shape("../dataset/vgg16/conv_shape");
-	for(int i=0;i<3715;i++){
+	ifstream conv_shape("../gen/conv_shape");
+	for(int i=0;i<fileNum;i++){
 		conv_shape>>h[i];
 		w[i] = h[i];
 	}
@@ -84,7 +85,7 @@ int main(){
 	
 	
 	
-	for(int i=0;i<3715;i++){
+	for(int i=0;i<fileNum;i++){
 		int i_w = w[i];
 		int i_h = h[i];
 		//cout<<i_w<<i_h<<endl;
@@ -99,7 +100,7 @@ int main(){
 		//read-feature
 		
 		len = 0;
-		ifstream conv_feature(("../dataset/vgg16/conv/"+a[i]).c_str());
+		ifstream conv_feature(("../conv/"+a[i]).c_str());
 		while(!conv_feature.eof())
 			conv_feature>>feature[len++];
 		conv_feature.close();
