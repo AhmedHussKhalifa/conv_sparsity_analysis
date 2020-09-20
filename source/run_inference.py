@@ -7,7 +7,7 @@ import numpy as np
 import re
 import os
 import time
-
+from time import process_time
 
 
 
@@ -47,6 +47,9 @@ from myconstants import *
 import multiprocessing
 from multiprocessing import Process
 import subprocess
+import statistics
+
+
 
 def create_graph(): 
     with tf.gfile.FastGFile(MODEL_PATH + Frozen_Graph[FLAGS.model_name], 'rb') as f: 
@@ -91,9 +94,66 @@ def run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, ima
        , {first_input_tensor[0]: sess.run(image_data)})
     return current_feature_map, input_to_feature_map
 
+def custom_conv2d(input_to_feature_map):
+    # New part for only 1 channel convolution 
+    device_1 = '/gpu:0'
+    device_2 = '/cpu:0'
+    Ih, Iw, Ic = input_to_feature_map.shape
+    K = 1 # numbers of filters
+    # print(input_to_feature_map.shape)
+    # x_in = input_to_feature_map[0,:,:,0] # take only one layer as input to the conv
+    # kernels 
+    x_in = input_to_feature_map[:,:,0] # take only one layer as input to the conv
+    kernel_in = np.array([
+                         [ 1,0,1 ],
+                         [ 0,1,0 ],
+                         [ 1,0,0 ], 
+                         ])
+
+    x_in = np.expand_dims(x_in, axis=0)
+    x_in = np.expand_dims(x_in, axis=3)
+
+    kernel_in = np.expand_dims(kernel_in, axis=2)
+    kernel_in = np.expand_dims(kernel_in, axis=3)
+    
+    # print(x_in.shape)
+    # print(kernel_in.shape)
+    # tf.reset_default_graph()
+    strides_ = [ 1, 1 , 1 , 1]
+    padding_ ='VALID'
+    iterationNum = 20
+    
+    g1 = tf.Graph()
+    with g1.as_default():
+        x = tf.constant(x_in, dtype=tf.float32)
+        kernel = tf.constant(kernel_in, dtype=tf.float32)
+        # x = x_in
+        # kernel_in  = tf.random.normal([3,3,Ic,K], 0, 1, tf.float32)
+        # kernel_in = kernel_in.eval(session=tf.Session())
+        # kernel     = kernel_in
+    
+    elapsed_avg = []
+    for device in [device_1, device_2]:
+        elapsed = []
+        for i in range(0,iterationNum):
+            start_time = process_time()
+            with tf.device(device_1): 
+                op_1 = tf.nn.conv2d(input = x, filter = kernel, strides = strides_, padding = padding_)
+            with tf.Session(graph=g1) as sess_1:
+                actual_1 = sess_1.run(op_1)
+            elapsed_ = (process_time() - start_time)*1000
+            # print(device + " -- Im2col --- %f MSEC ---" % (elapsed_gpu))
+            elapsed.append(elapsed_)
+        # print(device, elapsed)
+        elapsed_avg.append(statistics.mean(elapsed[1:]))
+    
+    elapsed_gpu = elapsed_avg[0]
+    elapsed_cpu = elapsed_avg[1]
+
+    return elapsed_gpu, elapsed_cpu, actual_1
 
 # python3-tf run_inference.py --select Org --model_name IV1 --END 2
-def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
+def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 #def get_DNN_info_general(sess, first_jpeg_image, n_images = 3):
 
     graph_def = sess.graph.as_graph_def(add_shapes=True)
@@ -164,7 +224,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     # Write the header in text file
     txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
     info_file = open(txt_file, 'w')
-    current_string = ('====input_tensor_name\toutput_tensor_name\tIh\tIw\tOh\tOw\tKh\tKw\tSh\tSw\tIc\tK\tru\tlowering_density====\n')
+    current_string = ('====input_tensor_name\toutput_tensor_name\tIh\tIw\tOh\tOw\tKh\tKw\tSh\tSw\tIc\tK\tru\ttime_gpu\ttime_cpu\tlowering_density====\n')
     info_file.write(current_string)
     
     print('Fetched Primary information about DNN...')
@@ -175,6 +235,12 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     file_list_file = open(file_list, 'w')
     conv_shape_file = open(conv_shape, 'w')
 
+    convTime_fileName = FLAGS.gen_dir + "CPU_GPU_time.txt"
+    convTime_file = open(convTime_fileName, 'w')
+    convTime_file.write("Ih" + '\t' + "Iw" + '\t' + "Ic" + '\t' + 
+                        "Kh" + '\t' + "Kw" + '\t' + "ru" + '\t' + 
+                        "GPU" + '\t' + "CPU" + '\n')
+    # convTime_file.write('\n' + device + '\t' + ' msec \n\n\n')
     for ic, c in enumerate(conv_tensor_list):
         
         # Get image data
@@ -182,7 +248,8 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         
         # Run the first image
         current_feature_map, input_to_feature_map = run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, image_data)
-        
+
+##############################################################        
         _, Oh, Ow, _   = current_feature_map.shape
         In, Ih, Iw, Ic = input_to_feature_map.shape
         K, Kh, Kw,     = k_tensor_list[ic], kh_tensor_list[ic], kw_tensor_list[ic]
@@ -204,13 +271,14 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         # Data for preformance paper
         # File name the have the conv layer intput 
         input_tensor_FeatureMap_fileName = (FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, 1)
-        
+        output_tensor_FeatureMap_fileName = ("rs_tf_"+FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, 1)
+
         file_list_file.write(input_tensor_FeatureMap_fileName+"\n")
         current_string = ("%d")%(Ih)
         conv_shape_file.write(current_string+"\n")
 
-        conv_fileName = FLAGS.conv + input_tensor_FeatureMap_fileName
-        conv_file = open(conv_fileName, 'w')
+        conv_fileName       = FLAGS.conv + input_tensor_FeatureMap_fileName
+        conv_file           = open(conv_fileName, 'w')
         for i_h in range(0, Ih):
             for i_w in range(0, Iw):
                 conv_file.write(str(input_to_feature_map[i_h, i_w, 0]) + '\t')
@@ -220,6 +288,25 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 
         # lowering_matrix                 = conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
         lowering_matrix                 = conv_layer.preprocessing_layer(input_to_feature_map)
+
+        conv_op_fileName    = FLAGS.conv + output_tensor_FeatureMap_fileName
+        conv_op_file        = open(conv_op_fileName, 'w')
+        
+        elapsed_gpu, elapsed_cpu , actual_1 = custom_conv2d(input_to_feature_map)
+        print(np.size(actual_1))
+        for i_h in range(0, np.size(actual_1,1)):
+            for i_w in range(0, np.size(actual_1,2)):
+                conv_op_file.write(str(actual_1[0, i_h, i_w, 0]) + '\t')
+            conv_op_file.write('\n')
+        conv_op_file.close()
+
+        conv_layer.elapsed_cpu             += elapsed_cpu
+        conv_layer.elapsed_gpu             += elapsed_gpu
+        x = (str(conv_layer.Ih) + '\t' + str(conv_layer.Iw) + '\t' + str(conv_layer.Ic) + '\t' + 
+             str(conv_layer.Kh) + '\t' + str(conv_layer.Kw) + '\t' + str(conv_layer.ru)+ '\t' + 
+             str(elapsed_gpu) + '\t'  + str(elapsed_cpu) + '\n')
+        print(x)
+        convTime_file.write(x)
 
         #print('********* PADDING TYPE ', conv_layer.padding, ' PADDINGS: ' , conv_layer.paddings, ' Input: ', input_tensor_name, ' out: ', output_tensor_name,
         #        ' Ih: ', conv_layer.Ih)
@@ -232,11 +319,12 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     
     print('Reset the session')
     config = tf.ConfigProto(device_count = {'GPU': 0})
-    sess = tf.Session(config=config) 
-    # sess = tf.Session() # For GPU RUN
+    # sess = tf.Session(config=config) 
+    sess = tf.Session() # For GPU RUN
     create_graph()
     # Loop through images to get the average density for images:
-    for imgID in range(2, FLAGS.END + 1):
+    for imgID in range(2, FLAGS.END):
+        n_images +=1
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
@@ -249,6 +337,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
             # Run the DNN
             current_feature_map, input_to_feature_map = run_DNN_for_analysis(sess, ic, c, input_tensor_list, first_input_tensor, image_data)
             
+
             # Get the old_conv_layer in a new deep copy
             old_conv_layer = copy.deepcopy(all_layers[ic])
             
@@ -259,20 +348,31 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
             # Data for preformance paper
             # File name the have the conv layer intput 
             input_tensor_FeatureMap_fileName = (FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, imgID)
+            
             file_list_file.write(input_tensor_FeatureMap_fileName+"\n")
-            current_string = ("%d")%(Ih)
+            current_string = ("%d")%(old_conv_layer.Ih)
             conv_shape_file.write(current_string+"\n")
 
             conv_fileName = FLAGS.conv + input_tensor_FeatureMap_fileName
             conv_file = open(conv_fileName, 'w')
-            for i_h in range(0, Ih):
-                for i_w in range(0, Iw):
+            for i_h in range(0, old_conv_layer.Ih):
+                for i_w in range(0, old_conv_layer.Iw):
                     conv_file.write(str(input_to_feature_map[i_h, i_w, 0]) + '\t')
             conv_file.close()
 
             ####################################### END CUDA data ####################################################
             lowering_matrix                 = old_conv_layer.preprocessing_layer(input_to_feature_map)
             # lowering_matrix                 = old_conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
+            elapsed_gpu, elapsed_cpu, _        = custom_conv2d(input_to_feature_map)
+            all_layers[ic].elapsed_cpu      += elapsed_cpu
+            all_layers[ic].elapsed_gpu      += elapsed_gpu
+            # print("Im2col GPU: %f MSEC --- CPU: %f MSEC" % (elapsed_gpu, elapsed_cpu))
+            x = ((str(all_layers[ic].Ih) + '\t' + str(all_layers[ic].Iw) + '\t' + str(all_layers[ic].Ic) + '\t' + 
+                  str(all_layers[ic].Kh) + '\t' + str(all_layers[ic].Kw) + '\t' +            '%.4f'      + '\t' +  
+                           '%.4f'        + '\t' +            '%.4f'      + '\n') %
+                 (old_conv_layer.ru, elapsed_gpu, elapsed_cpu))
+            print(x)
+            convTime_file.write(x)
             # Update the densities to sum
             all_layers[ic].ru += old_conv_layer.ru
             all_layers[ic].lowering_density += old_conv_layer.lowering_density
@@ -283,7 +383,8 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
             if ic == int(0.25*len(conv_tensor_list)) or ic == int(0.5*len(conv_tensor_list)) or ic == int(0.75*len(conv_tensor_list)):
                 # reset the session:
                 config = tf.ConfigProto(device_count = {'GPU': 0})
-                sess = tf.Session(config=config)
+                # sess = tf.Session(config=config)
+                sess = tf.Session() # GPU
                 create_graph()
 
             #print('i-', ic, ' ', input_tensor_list[ic], 
@@ -291,11 +392,12 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         
         # Reset the session
         config = tf.ConfigProto(device_count = {'GPU': 0})
-        sess = tf.Session(config=config)
+        # sess = tf.Session(config=config)
+        sess = tf.Session() # For GPU
         create_graph()
     file_list_file.close()
     conv_shape_file.close()
-
+    convTime_file.close()
 
     # Get the average density and save it in *.info file:
     txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
@@ -303,6 +405,8 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     for ilayer, layer in enumerate(all_layers):
         all_layers[ilayer].ru = all_layers[ilayer].ru/n_images
         all_layers[ilayer].lowering_density = all_layers[ilayer].lowering_density/n_images
+        all_layers[ilayer].elapsed_gpu = all_layers[ilayer].elapsed_gpu/n_images
+        all_layers[ilayer].elapsed_cpu = all_layers[ilayer].elapsed_cpu/n_images
 
 #        current_string = ('%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\n' %
 #                (layer.input_tensor_name, layer.output_tensor_name, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
@@ -311,12 +415,14 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 #                    layer.Ic, layer.K,
 #                    layer.ru, layer.lowering_density))
 
-        current_string = ('%d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f \\\\\n' %
-                (ilayer, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
-                    layer.Kh, layer.Kw,
-                    layer.Sh, layer.Sw,
-                    layer.Ic, layer.K,
-                    layer.ru, layer.lowering_density))
+        # current_string = ('%d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f & %.4f & %.4f msec \\\\\n' %
+        current_string = ('%d \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %.2f \t %.2f \t %.4f \t %.4f msec \\\\\n' %
+                         (ilayer, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
+                            layer.Kh, layer.Kw,
+                            layer.Sh, layer.Sw,
+                            layer.Ic, layer.K,
+                            layer.ru, layer.lowering_density,
+                            layer.elapsed_gpu, layer.elapsed_cpu))
         info_file.write(current_string)
         #print(current_string)
 
@@ -938,7 +1044,8 @@ def readAndPredictOptimizedImageByImage():
         if (actual_idx - 1) % 50 == 0 or actual_idx == FLAGS.START:
             
             config = tf.ConfigProto(device_count = {'GPU': 0})
-            sess = tf.Session(config=config)
+            # sess = tf.Session(config=config)
+            sess = tf.Session() #for GPU
             create_graph()
             softmax_tensor = sess.graph.get_tensor_by_name(final_tensor_names[FLAGS.model_name])
             print('New session group has been created')
@@ -1033,7 +1140,8 @@ def readAndPredictLoopOptimized():
         # if (batchID) % 10 == 0 :
             
         config = tf.ConfigProto(device_count = {'GPU': 0})
-        sess = tf.Session(config=config)
+        # sess = tf.Session(config=config)
+        sess = tf.Session() # for GPU
         create_graph()
         #print_tensors(sess)
         get_DNN_info(sess)
@@ -1128,6 +1236,13 @@ if __name__ == '__main__':
       type=str,  
       default='All',  
       help='select to run inference for our selector or all QFs '  
+  )
+
+    parser.add_argument(  
+      '--conv_result',  
+      type=str,
+      default='../conv_result/',
+      help='Feature Maps text directory directory'
   )
 
     parser.add_argument(  

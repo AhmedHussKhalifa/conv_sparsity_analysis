@@ -59,14 +59,17 @@ __global__ void func_new(float* input,float *kernel,float* output,
 
 
 int main(){
-	int fileNum = 2 * 94;
+	int fileNum = 3 * 94;
 	string a[fileNum];
 	int h[fileNum],w[fileNum];
-	ifstream file_list("../gen/file_list");
+	ifstream file_list("../gen/file_list_d");
 	for(int i=0;i<fileNum;i++)
+	{
 		file_list>>a[i];
+		// cout<<a[i]<<endl;
+	}
 	file_list.close();
-	ifstream conv_shape("../gen/conv_shape");
+	ifstream conv_shape("../gen/conv_shape_d");
 	for(int i=0;i<fileNum;i++){
 		conv_shape>>h[i];
 		w[i] = h[i];
@@ -139,27 +142,47 @@ int main(){
 			fprintf(stderr, "cudaMemcpy failed!%s\n", cudaGetErrorString(cudaStatus));
 		}
 			//time-start
-		cudaEvent_t start,stop;
+		int iterationNum = 20;
 		float elapsedTime1 = 0.0;
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
-		cudaEventRecord(start,0);
-	
-		
-		//function-start
-		
-		func_new<<<(i_h-k_h)/stride+1,(i_w-k_w)/stride+1>>>(gpu_input,gpu_kernel,gpu_output,i_w,i_h,k_w,k_h,stride,o_w,o_h);
+		for (int j = 0 ; j < iterationNum ; j++)
+		{
+			float elapsed = 0.0;
+			cudaEvent_t start,stop;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start,0);	
+			//function-start
+			
+			func_new<<<(i_h-k_h)/stride+1,(i_w-k_w)/stride+1>>>(gpu_input,gpu_kernel,gpu_output,i_w,i_h,k_w,k_h,stride,o_w,o_h);
 
-		//end-time
-		cudaEventRecord(stop, 0);
-		cudaEventSynchronize(stop);
-		cudaEventElapsedTime(&elapsedTime1, start, stop);
-		cout << elapsedTime1<< endl; //ms
-		cudaEventDestroy(start);
-		cudaEventDestroy(stop);
+			//end-time
+			cudaEventRecord(stop, 0);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&elapsed, start, stop);
+			elapsedTime1 +=elapsed;
+			cudaEventDestroy(start);
+			cudaEventDestroy(stop);
+		}
+		
+		cout << a[i].c_str() << '\t';
+		cout << (elapsedTime1/iterationNum) << endl; //ms
 
 		float *result = new float[outSize];
 		cudaStatus = cudaMemcpy(result,gpu_output,outSize*sizeof(float),cudaMemcpyDeviceToHost);
+		
+		
+		// int len_r = 0;
+		// // cout << "here" << outSize;
+		// ofstream conv_result(("../conv_result/rs_"+a[i]).c_str());
+		// while(len_r<outSize)
+		// {
+		// 	conv_result<<result[len_r++]<<'\t';
+		// }
+		// // conv_result<<'\n';
+		// conv_result.close();
+
+
+
 		if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMemcpy failed!%s\n", cudaGetErrorString(cudaStatus));
 		}

@@ -39,12 +39,15 @@ __global__ void func_old(float* input,float* output,
 
 
 int main(){
-	int fileNum = 2 * 94;
+	int fileNum = 3 * 94;
 	string a[fileNum];
 	int h[fileNum],w[fileNum];
 	ifstream file_list("../gen/file_list");
 	for(int i=0;i<fileNum;i++)
+	{		
 		file_list>>a[i];
+		// cout<<a[i]<<endl;
+	}
 	file_list.close();
 	
 	ifstream conv_shape("../gen/conv_shape");
@@ -63,7 +66,8 @@ int main(){
 	const int kernelSize = k_w*k_h;
 	const float kernel[kernelSize] = { 1,0,1,0,1,1,0,1,1};
 	
-	for(int i=0;i<fileNum;i++){
+	for(int i=0;i<fileNum;i++)
+	{
 		int i_w = w[i];
 		int i_h = h[i];
 		//cout<<i_w<<i_h<<endl;
@@ -80,88 +84,99 @@ int main(){
 		while(!conv_feature.eof())
 			conv_feature>>feature[len++];
 		conv_feature.close();
-	
-		float *im2col = new  float[outSize];
-	
-
-		float * gpu_input;
-		float * gpu_output;
-
-	
-
-		CUDA_CALL(cudaMalloc((void**)&gpu_input,arraySize*sizeof(float)));
-
-		CUDA_CALL(cudaMalloc((void**)&gpu_output,outSize*sizeof(float)));
-
-		CUDA_CALL(cudaMemcpy(gpu_input,feature,arraySize*sizeof(float),cudaMemcpyHostToDevice));
-
-		cudaEvent_t start,stop;
-		float elapsedTime1 = 0.0;
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
-		cudaEventRecord(start,0);
-
-		func_old<<<o_w*o_h,1>>>(gpu_input,gpu_output,i_w,i_h,k_w,k_h,stride,o_w,o_h);
-	
-		CUDA_CALL(cudaMemcpy(im2col,gpu_output,outSize*sizeof(float),cudaMemcpyDeviceToHost));
-	
-		cudaEventRecord(stop, 0);
-		cudaEventSynchronize(stop);
-		cudaEventElapsedTime(&elapsedTime1, start, stop);
-
-		//cout << elapsedTime1<<"ms" << endl;
-		cudaEventDestroy(start);
-		cudaEventDestroy(stop);
-
-		cudaFree(gpu_input);
-		cudaFree(gpu_output);
-
-		cublasHandle_t handle;
-		cublasCreate(&handle);
-	
-	
-		float * gpu_im2col;
-		float * gpu_kernel;
-		float * gpu_result;
+		
+		float iterationNum = 20;
+		float elapsed_total = 0.0;
 		float * cpu_result;
 		cpu_result = (float*)malloc(sizeof(float)*o_w*o_h);
-	
-	
-
-		CUDA_CALL(cudaMalloc((void**)&gpu_im2col,outSize*sizeof(float)));
-		CUDA_CALL(cudaMalloc((void**)&gpu_kernel,k_w*k_h*sizeof(float)));
-		CUDA_CALL(cudaMalloc((void**)&gpu_result,o_w*o_h*sizeof(float)));
+		for (int j = 0 ; j < iterationNum ; i++)
+		{
+			float *im2col = new  float[outSize];
 		
-		CUDA_CALL(cudaMemcpy(gpu_im2col,im2col,outSize*sizeof(float),cudaMemcpyHostToDevice));
-		CUDA_CALL(cudaMemcpy(gpu_kernel,kernel,k_w*k_h*sizeof(float),cudaMemcpyHostToDevice));
-	
-		float a=1;
-		float b=0;
-//cudaEvent_t start,stop;
-		float elapsedTime2 = 0.0;
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
-		cudaEventRecord(start,0);
-		cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, 1, o_w*o_h, k_w*k_h, &a,gpu_kernel , 1, gpu_im2col, k_w*k_h, &b, gpu_result, 1);
-	cudaEventRecord(stop, 0);
-		cudaEventSynchronize(stop);
-		cudaEventElapsedTime(&elapsedTime2, start, stop);
 
-		//cout << elapsedTime2<< endl;
-		cudaEventDestroy(start);
-		cudaEventDestroy(stop);
-		cudaMemcpy(cpu_result,gpu_result,o_w*o_h*sizeof(float),cudaMemcpyDeviceToHost);
+			float * gpu_input;
+			float * gpu_output;
 
-	
+		
 
+			CUDA_CALL(cudaMalloc((void**)&gpu_input,arraySize*sizeof(float)));
 
-		cout <<elapsedTime1 +elapsedTime2 << endl;
-	
-		cudaFree(gpu_im2col);
-		cudaFree(gpu_kernel);
-		cudaFree(gpu_result);
+			CUDA_CALL(cudaMalloc((void**)&gpu_output,outSize*sizeof(float)));
 
+			CUDA_CALL(cudaMemcpy(gpu_input,feature,arraySize*sizeof(float),cudaMemcpyHostToDevice));
 
+			cudaEvent_t start,stop;
+			float elapsedTime1 = 0.0;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start,0);
+
+			func_old<<<o_w*o_h,1>>>(gpu_input,gpu_output,i_w,i_h,k_w,k_h,stride,o_w,o_h);
+		
+			CUDA_CALL(cudaMemcpy(im2col,gpu_output,outSize*sizeof(float),cudaMemcpyDeviceToHost));
+		
+			cudaEventRecord(stop, 0);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&elapsedTime1, start, stop);
+
+			//cout << elapsedTime1<<"ms" << endl;
+			cudaEventDestroy(start);
+			cudaEventDestroy(stop);
+
+			cudaFree(gpu_input);
+			cudaFree(gpu_output);
+
+			cublasHandle_t handle;
+			cublasCreate(&handle);
+		
+		
+			float * gpu_im2col;
+			float * gpu_kernel;
+			float * gpu_result;
+		
+		
+
+			CUDA_CALL(cudaMalloc((void**)&gpu_im2col,outSize*sizeof(float)));
+			CUDA_CALL(cudaMalloc((void**)&gpu_kernel,k_w*k_h*sizeof(float)));
+			CUDA_CALL(cudaMalloc((void**)&gpu_result,o_w*o_h*sizeof(float)));
+			
+			CUDA_CALL(cudaMemcpy(gpu_im2col,im2col,outSize*sizeof(float),cudaMemcpyHostToDevice));
+			CUDA_CALL(cudaMemcpy(gpu_kernel,kernel,k_w*k_h*sizeof(float),cudaMemcpyHostToDevice));
+		
+			float a=1;
+			float b=0;
+	//cudaEvent_t start,stop;
+			float elapsedTime2 = 0.0;
+			cudaEventCreate(&start);
+			cudaEventCreate(&stop);
+			cudaEventRecord(start,0);
+			cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, 1, o_w*o_h, k_w*k_h, &a,gpu_kernel , 1, gpu_im2col, k_w*k_h, &b, gpu_result, 1);
+			cudaEventRecord(stop, 0);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&elapsedTime2, start, stop);
+
+			//cout << elapsedTime2<< endl;
+			cudaEventDestroy(start);
+			cudaEventDestroy(stop);
+			cudaMemcpy(cpu_result,gpu_result,o_w*o_h*sizeof(float),cudaMemcpyDeviceToHost);
+
+			elapsed_total += elapsedTime1 +elapsedTime2;
+		
+			cudaFree(gpu_im2col);
+			cudaFree(gpu_kernel);
+			cudaFree(gpu_result);
+
+		}
+		cout <<(elapsed_total/iterationNum) << endl;
+		int len_r = 0;
+		// cout << "here" << outSize;
+		ofstream conv_result(("../conv_result/rs_im2colGemm_"+a[i]).c_str());
+		while(len_r<outSize)
+		{
+			conv_result<<cpu_result[len_r++]<<'\t';
+		}
+		// conv_result<<'\n';
+		conv_result.close();
 		free(cpu_result);
 	}
 	return 0;

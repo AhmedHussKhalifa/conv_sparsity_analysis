@@ -46,7 +46,8 @@ class Conv_Layer(object):
     # for different densities thats why we need a vector
     # self.density_bound_cscc                         =  np.empty(0, float) 
     self.density_bound_cscc                         =  0
-    self.ru                                         = 0
+    self.ru                                         =  0
+    self.lowering_density                           =  0
     # Save All the densities per Image in an single array
     self.ru_batch                                   =  np.empty(0, float)
     self.lowering_den_batch                         =  np.empty(0, float)
@@ -54,7 +55,9 @@ class Conv_Layer(object):
     self.pattern_width                              =  4 # CONST for our approach 
     self.patterns                                   =  np.empty(0, int)
     self.patterns_sum                               =  0
-
+    # processing time 
+    self.elapsed_cpu                                =  0
+    self.elapsed_gpu                                =  0
     self.lowering_density_channel                   = np.empty(0, float)
     self.feature_density_channel                    = np.empty(0, float)
   def __str__(self):
@@ -139,14 +142,14 @@ class Conv_Layer(object):
 
       paddings = [[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]]
       paddings = tf.convert_to_tensor(paddings, dtype=tf.int32)
-      self.paddings = paddings.eval(session=tf.compat.v1.Session())
+      self.paddings = paddings.eval(session=tf.Session())
        
   # Here we should add the padding, lowering matrix reps, etc
   
   def image_padding(self, feature_maps):
     #   One of "CONSTANT", "REFLECT", or "SYMMETRIC" (case-insensitive)
     feature_maps        = tf.pad(feature_maps, self.paddings, "CONSTANT",constant_values=0)
-    feature_maps        = feature_maps.eval(session=tf.compat.v1.Session())
+    feature_maps        = feature_maps.eval(session=tf.Session())
     self.Ih_padded      = feature_maps.shape[0]
     self.Iw_padded      = feature_maps.shape[1]
     self.tot_nz_feature = np.size(feature_maps[feature_maps != 0.0])

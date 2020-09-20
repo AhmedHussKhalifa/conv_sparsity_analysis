@@ -33,7 +33,7 @@ int count_dir()
 int main(){
 
 	// int fileNum = count_dir();
-	int fileNum = 2 * 94;
+	int fileNum = 3 * 94;
 	string a[fileNum];
 	int h[fileNum],w[fileNum];
 	ifstream file_list("../gen/file_list");
