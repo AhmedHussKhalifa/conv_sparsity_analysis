@@ -170,6 +170,11 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     print('Fetched Primary information about DNN...')
 
     # Loop through convolutions to get the conv dimensions
+    file_list = FLAGS.gen_dir + "file_list"
+    conv_shape = FLAGS.gen_dir + "conv_shape"
+    file_list_file = open(file_list, 'w')
+    conv_shape_file = open(conv_shape, 'w')
+
     for ic, c in enumerate(conv_tensor_list):
         
         # Get image data
@@ -190,9 +195,31 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         # Create the conv_layer
         conv_layer = Conv_Layer(input_tensor_name, output_tensor_name, K, Kh, Kw, Sh, Sw, Oh, Ow, Ih, Iw, Ic, In, padding=padding_type)
         conv_layer.padding_cal()
+        # print(input_tensor_name, output_tensor_name)
+        # Calculate the densities
+        input_to_feature_map             = np.squeeze(input_to_feature_map)
+        
+        ####################################### CUDA data ########################################################
 
-        # Calculate the densities 
-        lowering_matrix                 = conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
+        # Data for preformance paper
+        # File name the have the conv layer intput 
+        input_tensor_FeatureMap_fileName = (FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, 1)
+        
+        file_list_file.write(input_tensor_FeatureMap_fileName+"\n")
+        current_string = ("%d")%(Ih)
+        conv_shape_file.write(current_string+"\n")
+
+        conv_fileName = FLAGS.conv + input_tensor_FeatureMap_fileName
+        conv_file = open(conv_fileName, 'w')
+        for i_h in range(0, Ih):
+            for i_w in range(0, Iw):
+                conv_file.write(str(input_to_feature_map[i_h, i_w, 0]) + '\t')
+        conv_file.close()
+
+        ####################################### END CUDA data ####################################################
+
+        # lowering_matrix                 = conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
+        lowering_matrix                 = conv_layer.preprocessing_layer(input_to_feature_map)
 
         #print('********* PADDING TYPE ', conv_layer.padding, ' PADDINGS: ' , conv_layer.paddings, ' Input: ', input_tensor_name, ' out: ', output_tensor_name,
         #        ' Ih: ', conv_layer.Ih)
@@ -208,13 +235,18 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     sess = tf.Session(config=config)
     create_graph()
     # Loop through images to get the average density for images:
-    for imgID in range(2, n_images):
+<<<<<<< HEAD
+    for imgID in range(2, FLAGS.END + 1):
+=======
+    for imgID in range(2, 3):
+>>>>>>> parent of fe06e08... for tables creation
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
         print('[%s] %s' % (FLAGS.model_name, current_jpeg_image))
 
         # Loop through all convs in the model to update their densities:
+        
         for ic, c in enumerate(conv_tensor_list):
             
             # Run the DNN
@@ -224,8 +256,26 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
             old_conv_layer = copy.deepcopy(all_layers[ic])
             
             # Calculate the densities of old_conv_layer
-            lowering_matrix                 = old_conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
+            input_to_feature_map            = np.squeeze(input_to_feature_map)
+            ####################################### CUDA data ########################################################
 
+            # Data for preformance paper
+            # File name the have the conv layer intput 
+            input_tensor_FeatureMap_fileName = (FLAGS.model_name+"_Conv_%d_ImgID_%d")%(ic, imgID)
+            file_list_file.write(input_tensor_FeatureMap_fileName+"\n")
+            current_string = ("%d")%(Ih)
+            conv_shape_file.write(current_string+"\n")
+
+            conv_fileName = FLAGS.conv + input_tensor_FeatureMap_fileName
+            conv_file = open(conv_fileName, 'w')
+            for i_h in range(0, Ih):
+                for i_w in range(0, Iw):
+                    conv_file.write(str(input_to_feature_map[i_h, i_w, 0]) + '\t')
+            conv_file.close()
+
+            ####################################### END CUDA data ####################################################
+            lowering_matrix                 = old_conv_layer.preprocessing_layer(input_to_feature_map)
+            # lowering_matrix                 = old_conv_layer.preprocessing_layer(np.squeeze(input_to_feature_map))
             # Update the densities to sum
             all_layers[ic].ru += old_conv_layer.ru
             all_layers[ic].lowering_density += old_conv_layer.lowering_density
@@ -246,9 +296,11 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
         config = tf.ConfigProto(device_count = {'GPU': 0})
         sess = tf.Session(config=config)
         create_graph()
+    file_list_file.close()
+    conv_shape_file.close()
 
 
-    # Get the average density:
+    # Get the average density and save it in *.info file:
     txt_file = FLAGS.gen_dir + FLAGS.model_name + '.info'
     info_file = open(txt_file, 'a')
     for ilayer, layer in enumerate(all_layers):
@@ -262,17 +314,19 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
 #                    layer.Ic, layer.K,
 #                    layer.ru, layer.lowering_density))
 
-        current_string = ('%d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f \\\\\n' %
-                (ilayer, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
+        current_string = ('%s & %s & %d & %d & %d & %d & %d & %d & %d & %d & %d & %d & %.2f & %.2f\\\\\n' %
+                (layer.input_tensor_name, layer.output_tensor_name, layer.Ih, layer.Iw, layer.Oh, layer.Ow,
                     layer.Kh, layer.Kw,
                     layer.Sh, layer.Sw,
                     layer.Ic, layer.K,
                     layer.ru, layer.lowering_density))
+        print(current_string)
+        exit(0)
         info_file.write(current_string)
-        #print(current_string)
+        print(current_string)
 
 
-    #info_file.write('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
+    info_file.write('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
     info_file.close()
 
 
@@ -702,21 +756,27 @@ def compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, ima
 
 def save_featureMaps(ilayer, layer, results, sess, input_tensor_name, image_data):
 
-    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name)
+    current_tensor                  = sess.graph.get_tensor_by_name(layer.input_tensor_name) 
     current_feature_map             = sess.run(current_tensor, {input_tensor_name: image_data})
+    print("current_feature_map before squeeze :", current_feature_map)
     current_feature_map             = np.squeeze(current_feature_map)
+    rint("current_feature_map after squeeze :", current_feature_map)
+    exit(0)
     lowering_matrix                 = layer.preprocessing_layer(current_feature_map)
     layer.patterns                  = np.append(layer.patterns, patterns_cal(current_feature_map, layer))
     CPO                             = overlap_cal(lowering_matrix, layer)
     Im2col_space                    = getCR(layer, conv_methods['Im2Col'])
     for method in range(1,len(conv_methods)):
         getCR(layer, method, Im2col_space)
-
+    
     getDensityBound(layer, conv_methods['MEC'])
     getDensityBound(layer, conv_methods['CSCC'])
-    # append the results
+    
+   # append the results
     #results[ilayer] = layer
+
     return layer
+
 
 def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_layers):
     # Input the image, obtain the softmax prob value（one shape=(1,1008) vector）
@@ -759,7 +819,8 @@ def run_predictionsImage(sess, image_data, softmax_tensor, idx, qf_idx, all_laye
         # ilayer = 25    
         print('Conv Node %d' % ilayer)
         layer              = all_layers[ilayer]
-        layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+        # layer_updated      = compute_info_all_layers(ilayer, layer, results, sess, input_tensor_name, image_data)
+        layer_updated      = save_featureMaps(ilayer, layer, results, sess, input_tensor_name, image_data)
         all_layers[ilayer] = layer_updated
         print(layer_updated)
         L = ("%f \t %f \t %f \t %f \t %f\n")%(layer.CPO_cmpRatio, layer.CPS_cmpRatio, layer.MEC_cmpRatio, layer.CSCC_cmpRatio, layer.SparseTen_cmpRatio,)
@@ -1072,6 +1133,13 @@ if __name__ == '__main__':
       type=str,  
       default='All',  
       help='select to run inference for our selector or all QFs '  
+  )
+
+    parser.add_argument(  
+      '--conv',  
+      type=str,
+      default='../conv/',
+      help='Feature Maps text directory directory'
   )
 
     parser.add_argument(  
