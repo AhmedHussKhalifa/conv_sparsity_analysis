@@ -235,11 +235,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 50):
     sess = tf.Session(config=config)
     create_graph()
     # Loop through images to get the average density for images:
-<<<<<<< HEAD
     for imgID in range(2, FLAGS.END + 1):
-=======
-    for imgID in range(2, 3):
->>>>>>> parent of fe06e08... for tables creation
         current_jpeg_image      = org_image_dir + '/shard-' + str(0) + '/' +  str(1) + '/' + 'ILSVRC2012_val_' + str(imgID).zfill(8) + '.JPEG'
         image_data = get_image_data(current_jpeg_image)
         
