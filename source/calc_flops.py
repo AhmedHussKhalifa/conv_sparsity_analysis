@@ -113,8 +113,14 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     k_tensor_list  = []
     kw_tensor_list = []
     kh_tensor_list = []
+    num_classes    = 2 # binary in our problem
 
     depth_wise_conv_tensor_list = []
+
+    # Total macs of things you trained
+    trained_total_maccs = 0
+    logits_total_maccs_binary  = 0
+    logits_total_maccs_imagenet = 0
 
     # loop on all nodes in the graph
     for  nid, n in enumerate(graph_def.node):
@@ -123,6 +129,40 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
             if nid == 0:
                 first_input_tensor.append(n.name + ':0')
 
+
+            # Trainable total macs:
+            if 'Logits' in n.name and 'Conv2D' in n.op:
+                conv_tensor_params_name = n.input[1] + ':0'
+                conv_tensor_params      = sess.graph.get_tensor_by_name(conv_tensor_params_name)
+                filter_shape            = conv_tensor_params.shape
+                Cin                     = filter_shape[0]
+                Kh                      = filter_shape[1]
+                Kw                      = filter_shape[2]
+ 
+                # Hossam: Cout is 1001 in this case when imageNet - In our case it is 2 classes (binary)
+                # Cout                    = filter_shape[3]
+                Cout = num_classes
+                
+                # Get image data
+                image_data = get_image_data(first_jpeg_image)
+                
+                # Run the first image
+                input_dw_tensor_list = [n.input[0] + ':0']
+                output_tensor_name = n.name + ':0'
+                c                  = [sess.graph.get_tensor_by_name(output_tensor_name)]
+                current_feature_map, input_to_feature_map = run_DNN_for_analysis(sess, 0, c, input_dw_tensor_list, first_input_tensor, image_data)
+                current_feature_map = current_feature_map[0]
+                _, Oh, Ow, _   = current_feature_map.shape
+                In, Ih, Iw, Ic = input_to_feature_map.shape
+                
+                logits_total_maccs_binary    = Kw * Kh * Cin * Oh * Ow * Cout
+                logits_total_maccs_imagenet  = Kw * Kh * Cin * Oh * Ow * filter_shape[3]
+    
+
+            
+
+
+            # Total macs:
             if 'DepthwiseConv2d' in n.op: 
                 #if 'padding' in n.attr.keys():
 
@@ -282,7 +322,6 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     # #  options=tf.profiler.ProfileOptionBuilder.trainable_variables_parameter())
 
 
-
     for layer in all_layers:
         # Normal Conv: K × K × Cin × Hout × Wout × Cout
         # if layer.Sw == 2:
@@ -300,7 +339,44 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
         #     print(layer.Sh, layer.Sw)
         #     exit(0)
 
-    print('MACs %d' % total_maccs)
+    # One layer before for trainable Conv2D
+    bf_last_imageNet_layer_trained_total_maccs = 0
+    bf_last_selector_layer_trained_total_maccs = 0
+    if FLAGS.model_name == 'MobileNetV2':
+        layer                   = all_layers[-1]
+
+        # Calcualte the selector bf last layer:
+        bf_last_selector_layer_trained_total_maccs = layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * num_classes
+
+        # Calculate the last layer trained total macs assuming 1000 classes (to be subtracted)
+        bf_last_imageNet_layer_trained_total_maccs = layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+
+
+    # Get anything before trainable macs: (logits are already excluded)
+    anything_before_selector_maccs = total_maccs -  bf_last_imageNet_layer_trained_total_maccs
+
+    # Adjust your total macs for the model assuming ImageNet
+    total_maccs = anything_before_selector_maccs + bf_last_imageNet_layer_trained_total_maccs + logits_total_maccs_imagenet
+
+    # Adjust your total for the model assuming binary choice
+    total_maccs_binary = anything_before_selector_maccs + bf_last_selector_layer_trained_total_maccs + logits_total_maccs_binary
+
+    # Calculate selector maccs
+    selector_maccs = total_maccs_binary + 8*(bf_last_selector_layer_trained_total_maccs + logits_total_maccs_binary)
+
+
+    # Calculate difference in flops for the selector
+    flops_delta = (selector_maccs - total_maccs_binary)
+
+
+    print('ImageNet Stuff')
+    print('MACs for MobileNetV2: %d' % total_maccs)
+
+    print('Binary Stuff')
+    print('MACs for MobileNetV2 binary: %d' % total_maccs_binary)
+    print('MACs for MobileNetV2 Selector: %d' % selector_maccs)
+    print('MACs increase between Selector and default: %d' % flops_delta)
+    
     # print(total_flops)
     # #print(total_trainable_params)
 
