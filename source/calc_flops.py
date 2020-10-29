@@ -129,6 +129,15 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
             if nid == 0:
                 first_input_tensor.append(n.name + ':0')
 
+            if 'softmax/logits' in n.name and 'MatMul' in n.op:
+                #print(n)
+                weights_tensor_name = n.input[1] + ':0'
+                weights_tensor      = sess.graph.get_tensor_by_name(weights_tensor_name)
+                # print(weights_tensor)
+
+                logits_total_maccs_binary    = weights_tensor.shape[0] * num_classes
+                logits_total_maccs_imagenet  = weights_tensor.shape[0] * weights_tensor.shape[1]
+
 
             # Trainable total macs:
             if 'Logits' in n.name and 'Conv2D' in n.op:
@@ -159,9 +168,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
                 logits_total_maccs_imagenet  = Kw * Kh * Cin * Oh * Ow * filter_shape[3]
     
 
-            
-
-
+        
             # Total macs:
             if 'DepthwiseConv2d' in n.op: 
                 #if 'padding' in n.attr.keys():
@@ -350,13 +357,24 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
         # Calculate the last layer trained total macs assuming 1000 classes (to be subtracted)
         bf_last_imageNet_layer_trained_total_maccs = layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+    elif FLAGS.model_name == 'IV3':
+        for layer in all_layers:
+            if 'mixed_10' not in layer.output_tensor_name:
+                continue
+
+            # Calcualte the selector bf last layer:
+            bf_last_selector_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+
+            # Calcualte the selector bf last layer:
+            bf_last_imageNet_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+
 
 
     # Get anything before trainable macs: (logits are already excluded)
     anything_before_selector_maccs = total_maccs -  bf_last_imageNet_layer_trained_total_maccs
 
     # Adjust your total macs for the model assuming ImageNet
-    total_maccs = anything_before_selector_maccs + bf_last_imageNet_layer_trained_total_maccs + logits_total_maccs_imagenet
+    total_maccs        = anything_before_selector_maccs + bf_last_imageNet_layer_trained_total_maccs + logits_total_maccs_imagenet
 
     # Adjust your total for the model assuming binary choice
     total_maccs_binary = anything_before_selector_maccs + bf_last_selector_layer_trained_total_maccs + logits_total_maccs_binary
@@ -370,12 +388,12 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
 
     print('ImageNet Stuff')
-    print('MACs for MobileNetV2: %d' % total_maccs)
+    print('MACs for %s: %d' % (FLAGS.model_name, total_maccs))
 
     print('Binary Stuff')
-    print('MACs for MobileNetV2 binary: %d' % total_maccs_binary)
-    print('MACs for MobileNetV2 Selector: %d' % selector_maccs)
-    print('MACs increase between Selector and default: %d' % maccs_delta)
+    print('MACs for %s binary: %d' % (FLAGS.model_name, total_maccs_binary))
+    print('MACs for %s Selector: %d' % (FLAGS.model_name, selector_maccs))
+    print('MACs increase between Selector and default binary %s: %d' % (FLAGS.model_name, maccs_delta))
 
 
 # if total_flops_per_layer / 1e9 > 1:   # for Giga Flops
