@@ -366,7 +366,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
 
     # Calculate difference in flops for the selector
-    flops_delta = (selector_maccs - total_maccs_binary)
+    maccs_delta = (selector_maccs - total_maccs_binary)
 
 
     print('ImageNet Stuff')
@@ -375,8 +375,14 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     print('Binary Stuff')
     print('MACs for MobileNetV2 binary: %d' % total_maccs_binary)
     print('MACs for MobileNetV2 Selector: %d' % selector_maccs)
-    print('MACs increase between Selector and default: %d' % flops_delta)
-    
+    print('MACs increase between Selector and default: %d' % maccs_delta)
+
+
+# if total_flops_per_layer / 1e9 > 1:   # for Giga Flops
+#     print(total_flops_per_layer/ 1e9 ,'{}'.format('GFlops'))
+# else:
+#     print(total_flops_per_layer / 1e6 ,'{}'.format('MFlops'))
+
     # print(total_flops)
     # #print(total_trainable_params)
 
