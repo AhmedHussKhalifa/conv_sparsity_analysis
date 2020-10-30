@@ -1,3 +1,5 @@
+# Reference link: https://machinethink.net/blog/how-fast-is-my-model/
+
 # -*- coding: utf-8 -*-
 # Hossam Amer & Sepideh Shaterian
 # Inception image recognition attempt v1
