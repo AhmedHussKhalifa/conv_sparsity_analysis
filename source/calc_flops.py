@@ -122,14 +122,21 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     logits_total_maccs_binary  = 0
     logits_total_maccs_imagenet = 0
 
+    # Trainable parameters:
+    logits_trainable_params_binary = 0
+    logits_trainable_params_imagenet = 0
+
+
     # loop on all nodes in the graph
     for  nid, n in enumerate(graph_def.node):
-        try:
-           
+        try: 
             if nid == 0:
                 first_input_tensor.append(n.name + ':0')
+           
+            if not nid % 150:
+                print(nid)
 
-            if 'softmax/logits' in n.name and 'MatMul' in n.op:
+            if ('softmax/logits' in n.name or 'FC/MatMul' in n.name) and 'MatMul' in n.op:
                 #print(n)
                 weights_tensor_name = n.input[1] + ':0'
                 weights_tensor      = sess.graph.get_tensor_by_name(weights_tensor_name)
@@ -137,6 +144,10 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
                 logits_total_maccs_binary    = weights_tensor.shape[0] * num_classes
                 logits_total_maccs_imagenet  = weights_tensor.shape[0] * weights_tensor.shape[1]
+
+                # Calculate the total trainable parameters
+                logits_trainable_params_binary += logits_total_maccs_binary + 1
+                logits_trainable_params_binary += logits_total_maccs_imagenet + 1
 
 
             # Trainable total macs:
@@ -166,7 +177,11 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
                 
                 logits_total_maccs_binary    = Kw * Kh * Cin * Oh * Ow * Cout
                 logits_total_maccs_imagenet  = Kw * Kh * Cin * Oh * Ow * filter_shape[3]
-    
+            
+
+                # Calculate the total trainable parameters
+                logits_trainable_params_binary += Kw * Kh * Cout * In + (1 * 1 * Cout)
+                logits_trainable_params_imagenet += Kw * Kh * filter_shape[3] * In + (1 * 1 * filter_shape[3])
 
         
             # Total macs:
@@ -329,12 +344,16 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     # #  options=tf.profiler.ProfileOptionBuilder.trainable_variables_parameter())
 
 
+    all_conv_trainable_params = 0
     for layer in all_layers:
         # Normal Conv: K × K × Cin × Hout × Wout × Cout
         # if layer.Sw == 2:
         #     print(layer.Ih, layer.Iw, layer.Oh, layer.Ow, layer.padding)
         #     exit(0)
         total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+
+        # all conv trainable params:
+        all_conv_trainable_params += layer.Kw * layer.Kh * layer.K * layer.In + (1 * 1 * layer.K)
 
         # if 'expand' in layer.output_tensor_name:
         #     print(layer.output_tensor_name)
@@ -349,6 +368,10 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     # One layer before for trainable Conv2D
     bf_last_imageNet_layer_trained_total_maccs = 0
     bf_last_selector_layer_trained_total_maccs = 0
+
+    # One layer before trainable parameters:
+    bf_last_trainable_params = 0
+
     if FLAGS.model_name == 'MobileNetV2':
         layer                   = all_layers[-1]
 
@@ -357,9 +380,13 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
         # Calculate the last layer trained total macs assuming 1000 classes (to be subtracted)
         bf_last_imageNet_layer_trained_total_maccs = layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+
+        # Calculate the total trainable params:
+        bf_last_trainable_params  =  layer.Kw * layer.Kh * layer.K * layer.In + (1 * 1 * layer.K)
+
     elif FLAGS.model_name == 'IV3':
         for layer in all_layers:
-            if 'mixed_10' not in layer.output_tensor_name:
+            if 'mixed_10' not in layer.output_tensor_name or 'cell_11' not in layer.output_tensor_name:
                 continue
 
             # Calcualte the selector bf last layer:
@@ -369,15 +396,30 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
             bf_last_imageNet_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
 
 
+            # Calculate the total trainable params:
+            bf_last_trainable_params  +=  layer.Kw * layer.Kh * layer.K * layer.In + (1 * 1 * layer.K)
+
+
 
     # Get anything before trainable macs: (logits are already excluded)
     anything_before_selector_maccs = total_maccs -  bf_last_imageNet_layer_trained_total_maccs
 
+    # Get anything before trainable parameters:
+    anything_before_selector_trainable_params = all_conv_trainable_params - bf_last_trainable_params
+
     # Adjust your total macs for the model assuming ImageNet
     total_maccs        = anything_before_selector_maccs + bf_last_imageNet_layer_trained_total_maccs + logits_total_maccs_imagenet
 
+    
     # Adjust your total for the model assuming binary choice
     total_maccs_binary = anything_before_selector_maccs + bf_last_selector_layer_trained_total_maccs + logits_total_maccs_binary
+
+    # Calculate the trainable params
+    total_trainable_params_imagenet = anything_before_selector_trainable_params + bf_last_trainable_params + logits_trainable_params_imagenet
+
+
+    # Calculate the trainable params binary:
+    total_trainable_params_binary = bf_last_trainable_params + logits_trainable_params_binary
 
     # Calculate selector maccs
     selector_maccs = total_maccs_binary + 8*(bf_last_selector_layer_trained_total_maccs + logits_total_maccs_binary)
@@ -386,6 +428,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     # Calculate difference in flops for the selector
     maccs_delta = (selector_maccs - total_maccs_binary)
 
+    #print(bf_last_imageNet_layer_trained_total_maccs)
 
     print('ImageNet Stuff')
     print('MACs for %s: %d' % (FLAGS.model_name, total_maccs))
@@ -395,6 +438,8 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     print('MACs for %s Selector: %d' % (FLAGS.model_name, selector_maccs))
     print('MACs increase between Selector and default binary %s: %d' % (FLAGS.model_name, maccs_delta))
 
+    # print('Total trainable parameters imagenet for %s is: %d' % (FLAGS.model_name, total_trainable_params_imagenet))
+    # print('Selector Residual trainable parameters binary for %s is: %d' % (FLAGS.model_name, total_trainable_params_binary))
 
 # if total_flops_per_layer / 1e9 > 1:   # for Giga Flops
 #     print(total_flops_per_layer/ 1e9 ,'{}'.format('GFlops'))
