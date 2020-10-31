@@ -800,20 +800,20 @@ def readImageBatch(startBatch, endBatch, qf_list):
 
 
 
-def run_specific_conv_node(sess, ic, c, first_input_tensor, image_data):
+def run_specific_conv_node(sess, ic, c, first_input_tensor, input_tensor_name, image_data):
     if FLAGS.model_name  == 'InceptionResnetV2' or  FLAGS.model_name == 'IV3':
-        current_feature_map             = sess.run(c,
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_name)],
             {first_input_tensor[0]: image_data})
     elif FLAGS.model_name  == 'MobileNetV2':
-        current_feature_map             = sess.run(c,
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_name)],
             {"input:0": sess.run(image_data)})
     elif FLAGS.model_name == 'AlexNet':
-        current_feature_map             = sess.run(c,
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_name)],
             {"Placeholder:0": image_data, 'Placeholder_1:0': 1})
     else:
-        current_feature_map             = sess.run(c, 
+        current_feature_map, input_to_feature_map             = sess.run([c, sess.graph.get_tensor_by_name(input_tensor_name)], 
             {first_input_tensor[0]: sess.run(image_data)})
-    return current_feature_map
+    return current_feature_map, input_to_feature_map
 
 def generate_the_dataset(sess, all_layers, first_input_tensor, image_data, imgID):
 
@@ -821,14 +821,45 @@ def generate_the_dataset(sess, all_layers, first_input_tensor, image_data, imgID
     for ilayer, layer in enumerate(all_layers):
         ic = ilayer
         c = layer.output_tensor_name
-        current_feature_map = run_specific_conv_node(sess, ic, c, first_input_tensor, image_data)
-        feature_map_filname = FLAGS.gen_dir +  (FLAGS.model_name +  "_ImgID_%d_Conv_%d") % (imgID, ic)  
-        np.save(feature_map_filname, current_feature_map)
+
+        input_tensor_name = layer.input_tensor_name
+        current_feature_map, input_to_feature_map = run_specific_conv_node(sess, ic, c, first_input_tensor, input_tensor_name, image_data)
+        write_input_output_featureMaps(current_feature_map, input_to_feature_map, imgID, ic)
+
+        # feature_map_filname = FLAGS.gen_dir +  (FLAGS.model_name +  "_ImgID_%d_Conv_%d") % (imgID, ic)  
+        # np.save(feature_map_filname, current_feature_map)
+
+
+
+def write_input_output_featureMaps(current_feature_map, input_to_feature_map, imgID, ic):
+
+    # Write the input first:
+    input_shape = input_to_feature_map.shape
+    output_shape = current_feature_map.shape
+    
+    input_to_feature_map = np.reshape(input_to_feature_map, input_shape[1]*input_shape[2]*input_shape[3])
+    output_feature_map    = np.reshape(current_feature_map, output_shape[1]*output_shape[2]*output_shape[3])
+
+
+    feature_map_filname = FLAGS.gen_dir +  (FLAGS.model_name +  "_ImgID_%d_Conv_%d.input") % (imgID, ic)
+    with open(feature_map_filname, 'w') as f:
+        for item in input_shape:
+            f.write("%d\n" % item)
+
+        for item in input_to_feature_map:
+            f.write("%f\n" % item)
+
+    feature_map_filname = FLAGS.gen_dir +  (FLAGS.model_name +  "_ImgID_%d_Conv_%d.output") % (imgID, ic)
+    with open(feature_map_filname, 'w') as f:
+        for item in output_shape:
+            f.write("%d\n" % item)
+        for item in output_feature_map:
+            f.write("%f\n" % item)
 
 
 def readAndPredictOptimizedImageByImage():
 
-    qf_list  = construct_qf_list()
+    qf_list    = construct_qf_list()
     img_size   = resized_dimention[FLAGS.model_name]
     t        = 0
     top1_acc = 0 
@@ -860,7 +891,6 @@ def readAndPredictOptimizedImageByImage():
         if actual_idx == FLAGS.START:
             all_layers_info, first_input_tensor       = get_DNN_info_general(sess, first_jpeg_image)
 
-        
         generate_the_dataset(sess, all_layers_info, first_input_tensor, image_data, original_img_ID)      
 
         if (actual_idx) % 50 == 0:
@@ -942,7 +972,7 @@ def ensure_model_name(x):
 
 ############################################################
 # Note this code does nort work for IV4 since its output tensor only takes batch size 1 
-# python3-tf run_inference.py --select Org --model_name IV3 --END 2
+# python3-tf output_IV3_dataset.py --select Org --model_name IV3 --END 2
 def main(_):
 
     model_path      =  WORKSPACE_DIR + FLAGS.model_name
