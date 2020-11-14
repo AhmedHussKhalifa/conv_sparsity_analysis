@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 MAIN_PATH       = '../gen/IV3_mean_dataset/'
 conv_stat_files = os.listdir(MAIN_PATH)
 
-total_nodes_count = len(list(conv_stat_files)) 
+total_nodes_count = len(list(conv_stat_files)) - 1
 for ic in range(total_nodes_count):
 # for ic in range(0, 2):
 	full_file = os.path.join(MAIN_PATH, 'IV3_Conv_' + str(ic) + '.stat')
@@ -30,11 +30,10 @@ for ic in range(total_nodes_count):
 		
 
 	# Plotting Code
-	images_indices = [i for i in range(len(lines[1:-1]))]
-
+	nze_list = nze_list / (Ih * Iw * Ic)
 
 	# Plotting Code:
-	plt.figure()
+	# plt.figure()
 	plt.plot(nze_list, '-*')
 	plt.xlabel('Image Index', color='k', size=16)
 	plt.ylabel('Total NZE Count', color='k', size=16)
@@ -45,6 +44,7 @@ for ic in range(total_nodes_count):
 
 	# plt.show()
 	plt.savefig(MAIN_PATH + 'plots/' + tit + '.png', dpi=600, bbox_inches='tight')
+	plt.close()
 
 	if not ic % 10:
 		print('Done %d/%d ' % (ic, total_nodes_count))
