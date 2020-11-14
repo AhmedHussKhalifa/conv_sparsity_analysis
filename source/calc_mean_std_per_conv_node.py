@@ -1061,7 +1061,7 @@ def ensure_model_name(x):
 
 ############################################################
 # Note this code does nort work for IV4 since its output tensor only takes batch size 1 
-# python3-tf output_IV3_dataset.py --select Org --model_name IV3 --END 2
+# time python3-tf calc_mean_std_per_conv_node.py --model_name IV3 --END 10
 def main(_):
 
     model_path      =  WORKSPACE_DIR + FLAGS.model_name
