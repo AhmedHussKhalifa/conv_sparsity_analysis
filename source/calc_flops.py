@@ -293,6 +293,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     # Write the header in text file
     print('Fetched Primary information about DNN...')
 
+
     # Loop through convolutions to get the conv dimensions
     for ic, c in enumerate(conv_tensor_list):
         
@@ -336,6 +337,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
     print('Extracted info for these %d layers... No Risk No Fun :) ' % len(all_layers))
     print('This code should work without exit.... Done!')
+
 
     # print_tensors_list_simple(sess)
 
@@ -388,11 +390,15 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
 
     elif FLAGS.model_name == 'IV3':
         for layer in all_layers:
-            if 'mixed_10' not in layer.output_tensor_name or 'cell_11' not in layer.output_tensor_name:
+            # if 'mixed_10' not in layer.output_tensor_name and 'cell_11' not in layer.output_tensor_name:
+            if 'mixed_10' not in layer.output_tensor_name:
                 continue
 
+            print(layer.output_tensor_name, 'mixed_10')
             # Calcualte the selector bf last layer:
             bf_last_selector_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+
+            print('progress:', bf_last_selector_layer_trained_total_maccs)
 
             # Calcualte the selector bf last layer:
             bf_last_imageNet_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
@@ -439,6 +445,9 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     print('MACs for %s binary: %d' % (FLAGS.model_name, total_maccs_binary))
     print('MACs for %s Selector: %d' % (FLAGS.model_name, selector_maccs))
     print('MACs increase between Selector and default binary %s: %d' % (FLAGS.model_name, maccs_delta))
+    print('anything_before_selector_maccs: %d ;  trained_section: %d' % (anything_before_selector_maccs, bf_last_selector_layer_trained_total_maccs 
+        + logits_total_maccs_binary))
+    print('Trainable FC: %d  --- Trainable ModuleBefore: %d ' % (logits_trainable_params_binary, bf_last_selector_layer_trained_total_maccs))
 
     # print('Total trainable parameters imagenet for %s is: %d' % (FLAGS.model_name, total_trainable_params_imagenet))
     # print('Selector Residual trainable parameters binary for %s is: %d' % (FLAGS.model_name, total_trainable_params_binary))
