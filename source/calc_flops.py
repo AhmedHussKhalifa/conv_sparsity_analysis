@@ -401,7 +401,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
             print('progress:', bf_last_selector_layer_trained_total_maccs)
 
             # Calcualte the selector bf last layer:
-            bf_last_imageNet_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K
+            bf_last_imageNet_layer_trained_total_maccs += layer.Kw * layer.Kh * layer.Ic * layer.Oh * layer.Ow * layer.K 
 
 
             # Calculate the total trainable params:
@@ -447,7 +447,7 @@ def get_DNN_info_general(sess, first_jpeg_image, n_images = 1):
     print('MACs increase between Selector and default binary %s: %d' % (FLAGS.model_name, maccs_delta))
     print('anything_before_selector_maccs: %d ;  trained_section: %d' % (anything_before_selector_maccs, bf_last_selector_layer_trained_total_maccs 
         + logits_total_maccs_binary))
-    print('Trainable FC: %d  --- Trainable ModuleBefore: %d ' % (logits_trainable_params_binary, bf_last_selector_layer_trained_total_maccs))
+    print('Trainable FC: %d  --- Trainable ModuleBefore: %d ' % (logits_total_maccs_binary, bf_last_selector_layer_trained_total_maccs))
 
     # print('Total trainable parameters imagenet for %s is: %d' % (FLAGS.model_name, total_trainable_params_imagenet))
     # print('Selector Residual trainable parameters binary for %s is: %d' % (FLAGS.model_name, total_trainable_params_binary))
